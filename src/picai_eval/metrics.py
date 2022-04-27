@@ -17,7 +17,7 @@ from __future__ import print_function
 from dataclasses import dataclass
 import numpy as np
 from pathlib import Path
-from sklearn.metrics import roc_auc_score, precision_recall_curve, average_precision_score
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
 
 from typing import List, Tuple, Dict, Any, Union, Optional, Hashable
 try:
@@ -75,17 +75,7 @@ class Metrics:
     # aggregates
     def calc_auroc(self, subject_list: Optional[List[str]] = None) -> float:
         """Calculate case-level Area Under the Receiver Operating Characteristic curve (AUROC)"""
-        if subject_list is None:
-            subject_list = list(self.case_target)
-
-        # calculate (inverse probability weighted) ROC curve
-        auroc = roc_auc_score(
-            y_true=[self.case_target[s] for s in subject_list],
-            y_score=[self.case_pred[s] for s in subject_list],
-            sample_weight=[self.case_weight[s] for s in subject_list],
-        )
-
-        return auroc
+        return self.calculate_ROC(subject_list=subject_list)['AUROC']
 
     @property
     def auroc(self) -> float:
@@ -135,27 +125,27 @@ class Metrics:
 
     @property
     def precision(self) -> "npt.NDArray[np.float64]":
-        """Calculate the number of false positives per case at each threshold"""
+        """Calculate lesion-level precision at each threshold"""
         return self.calculate_precision_recall()['precision']
 
     @property
     def recall(self) -> "npt.NDArray[np.float64]":
-        """Calculate the number of false positives per case at each threshold"""
+        """Calculate lesion-level recall at each threshold"""
         return self.calculate_precision_recall()['recall']
 
     @property
     def lesion_TP(self) -> "npt.NDArray[np.float64]":
-        """Calculate the number of true positives at each threshold"""
+        """Calculate number of true positive lesion detections at each threshold"""
         return self.calculate_counts()['TP']
 
     @property
     def lesion_FP(self) -> "npt.NDArray[np.float64]":
-        """Calculate the number of false positives at each threshold"""
+        """Calculate number of false positive lesion detections at each threshold"""
         return self.calculate_counts()['FP']
 
     @property
     def lesion_TPR(self) -> "npt.NDArray[np.float64]":
-        """Calculate the True Positive Rate (sensitivity) at each threshold"""
+        """Calculate lesion-level true positive rate (sensitivity) at each threshold"""
         if self.num_lesions > 0:
             return self.lesion_TP / self.num_lesions
         else:
@@ -163,14 +153,32 @@ class Metrics:
 
     @property
     def lesion_FPR(self) -> "npt.NDArray[np.float64]":
-        """Calculate the False Positive Rate (number of false positives per case) at each threshold"""
+        """Calculate lesion-level false positive rate (number of false positives per case) at each threshold"""
         return self.lesion_FP / self.num_cases
+
+    # case-level results
+    def calc_case_TPR(self, subject_list: Optional[List[str]] = None) -> "npt.NDArray[np.float64]":
+        """Calculate case-level true positive rate (sensitivity) at each threshold"""
+        return self.calculate_ROC(subject_list=subject_list)['TPR']
+
+    @property
+    def case_TPR(self) -> "npt.NDArray[np.float64]":
+        """Calculate case-level true positive rate (sensitivity) at each threshold"""
+        return self.calc_case_TPR()
+
+    def calc_case_FPR(self, subject_list: Optional[List[str]] = None) -> "npt.NDArray[np.float64]":
+        """Calculate case-level false positive rate (1 - specificity) at each threshold"""
+        return self.calculate_ROC(subject_list=subject_list)['FPR']
+
+    @property
+    def case_FPR(self) -> "npt.NDArray[np.float64]":
+        """Calculate case-level false positive rate (1 - specificity) at each threshold"""
+        return self.calc_case_FPR()
 
     # supporting functions
     def calculate_counts(self, subject_list: Optional[List[str]] = None) -> "Dict[str, npt.NDArray[np.float32]]":
         """
-        Calculate true positives (TP) and false positives (FP) as function of threshold,
-        based on the case evaluations from `evaluate_case`.
+        Calculate lesion-level true positive (TP) detections and false positive (FP) detections as each threshold.
         """
         # flatten y_list (and select cases in subject_list)
         lesion_y_list = self.get_lesion_results_flat(subject_list=subject_list)
@@ -196,17 +204,17 @@ class Metrics:
         FP: "npt.NDArray[np.float32]" = np.zeros_like(self.thresholds, dtype=np.float32)
         TP: "npt.NDArray[np.float32]" = np.zeros_like(self.thresholds, dtype=np.float32)
 
-        # for each threshold: count FPs and calculate the sensitivity
+        # for each threshold: count FPs and TPs
         for i, th in enumerate(self.thresholds):
             y_pred_thresholded = (y_pred >= th).astype(int)
             tp = np.sum(y_true*y_pred_thresholded)
             fp = np.sum(y_pred_thresholded - y_true*y_pred_thresholded)
 
-            # update FROC with new point
+            # update with new point
             FP[i] = fp
             TP[i] = tp
 
-        # extend FROC curve to infinity
+        # extend curve to infinity
         TP[-1] = TP[-2]
         FP[-1] = np.inf
 
@@ -244,6 +252,27 @@ class Metrics:
             'AP': AP,
             'precision': precision,
             'recall': recall,
+        }
+
+    def calculate_ROC(self, subject_list: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Generate Receiver Operating Characteristic curve for case-level risk stratification.
+        """
+        if subject_list is None:
+            subject_list = list(self.case_target)
+
+        fpr, tpr, _ = roc_curve(
+            y_true=[self.case_target[s] for s in subject_list],
+            y_score=[self.case_pred[s] for s in subject_list],
+            sample_weight=[self.case_weight[s] for s in subject_list],
+        )
+
+        auroc = auc(fpr, tpr)
+
+        return {
+            'FPR': fpr,
+            'TPR': tpr,
+            'AUROC': auroc,
         }
 
     def as_dict(self):
