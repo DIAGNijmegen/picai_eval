@@ -1,0 +1,7 @@
+numpy>=1.21
+tqdm
+SimpleITK
+scipy
+scikit-learn>=0.20.3
+mlxtend
+git+https://github.com/DIAGNijmegen/Report-Guided-Annotation
