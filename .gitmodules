@@ -1,3 +1,3 @@
 [submodule "src/picai_eval/stat_util"]
 	path = src/picai_eval/stat_util
-	url = git@github.com:mateuszbuda/ml-stat-util.git
+	url = https://github.com/mateuszbuda/ml-stat-util
