@@ -45,7 +45,7 @@ class Metrics:
             self.load(self.lesion_results)
 
         if self.subject_list is None:
-            self.subject_list = list(self.lesion_results)
+            self.subject_list = sorted(list(self.lesion_results))
 
         if self.case_target is None:
             # derive case-level targets as the maximum lesion-level target

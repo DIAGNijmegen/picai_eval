@@ -14,5 +14,5 @@ if __name__ == '__main__':
             "Bug Tracker": "https://github.com/DIAGNijmegen/picai_eval/issues"
         },
         license='Apache 2.0',
-        packages=['picai_eval'],
+        packages=['picai_eval', 'picai_eval.stat_util'],
     )

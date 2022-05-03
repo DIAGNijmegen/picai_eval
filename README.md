@@ -118,13 +118,13 @@ To evaluate softmax predictions (instead of detection maps), the function to ext
 
 ```python
 from picai_eval import evaluate
-from report_guided_annotation import preprocess_softmax
+from report_guided_annotation import extract_lesion_candidates
 
 metrics = evaluate(
     y_det=y_pred,
     y_true=y_true,
     subject_list=subject_list,  # may be omitted
-    y_det_postprocess_func=lambda pred: preprocess_softmax(pred)[0],
+    y_det_postprocess_func=lambda pred: extract_lesion_candidates(pred)[0],
 )
 ```
 
@@ -132,12 +132,12 @@ To evaluate a folder containing softmax predictions:
 
 ```python
 from picai_eval import evaluate_folder
-from report_guided_annotation import preprocess_softmax
+from report_guided_annotation import extract_lesion_candidates
 
 metrics = evaluate_folder(
     y_det_dir=in_dir_softmax,
     y_true_dir=in_dir_annot,
-    y_det_postprocess_func=lambda pred: preprocess_softmax(pred)[0],
+    y_det_postprocess_func=lambda pred: extract_lesion_candidates(pred)[0],
 )
 ```
 
