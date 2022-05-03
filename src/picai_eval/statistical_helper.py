@@ -258,7 +258,7 @@ def sample_then_match_then_compare_wrapper(args):  # pragma: no cover
     return sample_then_match_then_compare(**args)
 
 
-def validate_and_convert(*inputs) -> List[npt.NDArray[Any]]:
+def validate_and_convert(*inputs) -> "List[npt.NDArray[Any]]":
     """
     Validate inputs:
     - If the inputs consists of at least one dictionary, all inputs should be a dictionary

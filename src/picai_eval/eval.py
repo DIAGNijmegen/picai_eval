@@ -42,11 +42,11 @@ def evaluate_case(
     y_true: "Union[npt.NDArray[np.int32], str]",
     min_overlap: float = 0.10,
     overlap_func: "Union[str, Callable[[npt.NDArray[np.float32], npt.NDArray[np.int32]], float]]" = 'IoU',
-    case_confidence_func: Union[str, Callable[[npt.NDArray[np.float32]], float]] = 'max',
+    case_confidence_func: "Union[str, Callable[[npt.NDArray[np.float32]], float]]" = 'max',
     multiple_lesion_candidates_selection_criteria: str = 'overlap',
     allow_unmatched_candidates_with_minimal_overlap: bool = True,
-    y_det_postprocess_func: Optional[Callable[[npt.NDArray[np.float32]], npt.NDArray[np.float32]]] = None,
-    y_true_postprocess_func: Optional[Callable[[npt.NDArray[np.int32]], npt.NDArray[np.int32]]] = None,
+    y_det_postprocess_func: "Optional[Callable[[npt.NDArray[np.float32]], npt.NDArray[np.float32]]]" = None,
+    y_true_postprocess_func: "Optional[Callable[[npt.NDArray[np.int32]], npt.NDArray[np.int32]]]" = None,
 ) -> Tuple[List[Tuple[int, float, float]], float]:
     """
     Gather the list of lesion candidates, and classify in TP/FP/FN.
@@ -216,11 +216,11 @@ def evaluate(
     subject_list: Optional[Iterable[Hashable]] = None,
     min_overlap: float = 0.10,
     overlap_func: "Union[str, Callable[[npt.NDArray[np.float32], npt.NDArray[np.int32]], float]]" = 'IoU',
-    case_confidence_func: Union[str, Callable[[npt.NDArray[np.float32]], float]] = 'max',
+    case_confidence_func: "Union[str, Callable[[npt.NDArray[np.float32]], float]]" = 'max',
     multiple_lesion_candidates_selection_criteria: str = 'overlap',
     allow_unmatched_candidates_with_minimal_overlap: bool = True,
-    y_det_postprocess_func: Optional[Callable[[npt.NDArray[np.float32]], npt.NDArray[np.float32]]] = None,
-    y_true_postprocess_func: Optional[Callable[[npt.NDArray[np.int32]], npt.NDArray[np.int32]]] = None,
+    y_det_postprocess_func: "Optional[Callable[[npt.NDArray[np.float32]], npt.NDArray[np.float32]]]" = None,
+    y_true_postprocess_func: "Optional[Callable[[npt.NDArray[np.int32]], npt.NDArray[np.int32]]]" = None,
     num_parallel_calls: int = 3,
     verbose: int = 0,
 ) -> Metrics:
