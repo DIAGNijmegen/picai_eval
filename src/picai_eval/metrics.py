@@ -36,12 +36,16 @@ class Metrics:
     case_weight: Optional[Union[Dict[Hashable, float], List[float]]] = None
     lesion_weight: Optional[List[float]] = None
     thresholds: "Optional[npt.NDArray[np.float64]]" = None
+    subject_list: Optional[List[str]] = None
     sort: bool = True
 
     def __post_init__(self):
         if isinstance(self.lesion_results, (str, Path)):
             # load metrics from file
             self.load(self.lesion_results)
+
+        if self.subject_list is None:
+            self.subject_list = list(self.lesion_results)
 
         if self.case_target is None:
             # derive case-level targets as the maximum lesion-level target
@@ -110,7 +114,7 @@ class Metrics:
     def get_lesion_results_flat(self, subject_list: Optional[List[str]] = None):
         """Flatten the per-case lesion evaluation results into a single list"""
         if subject_list is None:
-            subject_list = list(self.lesion_results)
+            subject_list = self.subject_list
 
         return [
             (is_lesion, confidence, overlap)
@@ -259,7 +263,7 @@ class Metrics:
         Generate Receiver Operating Characteristic curve for case-level risk stratification.
         """
         if subject_list is None:
-            subject_list = list(self.case_target)
+            subject_list = self.subject_list
 
         fpr, tpr, _ = roc_curve(
             y_true=[self.case_target[s] for s in subject_list],
