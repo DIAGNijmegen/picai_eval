@@ -1,3 +1,8 @@
+# Ignore output of unit tests (but create the folder itself)
+tests/output/*
+!tests/output/.gitkeep 
+tests/__cache__/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -133,7 +138,3 @@ dmypy.json
 
 # macOS
 .DS_Store
-
-# output
-tests/__cache__/*
-tests/output/*

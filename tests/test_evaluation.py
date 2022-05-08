@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 from sklearn.metrics import roc_curve, auc
 from subprocess import check_call
@@ -228,6 +229,7 @@ def test_evaluation_from_dir_without_subject_list():
     assert metrics.AP == (10/14)*(1/2) + (5/9)*(1/2)
 
 
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="GitHub Actions' Windows does not like check_call")
 def test_main(metrics_path="tests/output/metrics.json"):
     """Test usage from command line"""
     if os.path.exists(metrics_path):
