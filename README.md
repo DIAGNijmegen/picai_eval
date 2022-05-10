@@ -10,14 +10,15 @@ Supported evaluation metrics:
 - Average Precision (AP)
 - Area Under the Receiver Operating Characteristic curve (AUROC)
 - PI-CAI ranking metric: `(AUROC + AP) / 2`
-- Precision-Recall curve (PR)
-- Receiver Operating Characteristic curve (ROC)
-- Free-Response Receiver Operating Characteristic curve (FROC)
+- Precision-Recall (PR) curve
+- Receiver Operating Characteristic (ROC) curve
+- Free-Response Receiver Operating Characteristic (FROC) curve
 
 Supported evaluation options:
 - Case-wise sample weight (also applied to lesion-level evaluation, with same weight for all lesion candidates of the same case).
 - Subset analysis by providing a list of case identifiers.
 
+See [**Accessing metrics after evaluation**](#accessing-metrics-after-evaluation) to learn how to access these metrics.
 
 ## Installation
 `picai_eval` is pip-installable:
@@ -159,6 +160,55 @@ metrics.save("path/to/metrics.json")
 ```
 
 The command line interface described in [Evaluate samples stored in a folder](#evaluate-samples-stored-in-a-folder) will automatically save the metrics to disk. It's output path can be controlled with the `--output` parameter.
+
+## Accessing metrics after evaluation
+To access metrics after evaluation, we recommend using the `Metrics` class:
+
+```python
+metrics = ...  # from evaluate, evaluate_folder, or Metrics("/path/to/metrics.json")
+
+# aggregate metrics
+AP = metrics.AP
+auroc = metrics.auroc
+picai_score = metrics.score
+
+# Precision-Recall (PR) curve
+precision = metrics.precision
+recall = metrics.recall
+
+# Receiver Operating Characteristic (ROC) curve
+tpr = metrics.case_TPR
+fpr = metrics.case_FPR
+
+# Free-Response Receiver Operating Characteristic (FROC) curve
+sensitivity = metrics.lesion_TPR
+fp_per_case = metrics.lesion_FPR
+```
+
+These can for example be used to plot the performance curves:
+
+```python
+import matplotlib.pyplot as plt
+from sklearn.metrics import PrecisionRecallDisplay, RocCurveDisplay
+
+# plot recision-Recall (PR) curve
+disp = PrecisionRecallDisplay(precision=precision, recall=recall, average_precision=AP)
+disp.plot()
+plt.show()
+
+# plot Receiver Operating Characteristic (ROC) curve
+disp = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=auroc)
+disp.plot()
+plt.show()
+
+# plot Free-Response Receiver Operating Characteristic (FROC) curve
+f, ax = plt.subplots()
+disp = RocCurveDisplay(fpr=fp_per_case, tpr=sensitivity)
+disp.plot(ax=ax)
+ax.set_xlim(0.001, 5.0); ax.set_xscale('log')
+ax.set_xlabel("False positives per case"); ax.set_ylabel("Sensitivity")
+plt.show()
+```
 
 ## Statistical tests
 The PI-CAI challenge features AI vs AI, AI vs Radiologists from Clinical Routine and AI vs Panel of Readers. Each of these comparisons come with a statistical test. For AI vs AI, a permuations test with the ranking metric is performend. Readers cannot be assigned a ranking metric without introducing bias, so for AI vs Panel of Readers and AI vs Single Reader we compare performance at matched operating points. See each section below for more details.
