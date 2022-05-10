@@ -98,7 +98,7 @@ class Metrics:
     @property
     def num_cases(self) -> int:
         """Calculate the number of cases"""
-        return len(self.case_target)
+        return len(self.subject_list)
 
     @property
     def num_lesions(self) -> int:
