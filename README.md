@@ -1,40 +1,45 @@
-# 3D Lesion Detection Evaluation
+# Evaluation Utilities for 3D Detection and Diagnosis in Medical Imaging
 ![Tests](https://github.com/DIAGNijmegen/picai_eval/actions/workflows/tests.yml/badge.svg)
 
-This repository contains code to evaluate 3D detection performance, geared towards Prostate Cancer Detection in MRI. This repository contains the official evaluation pipeline of the [Prostate Imaging: Cancer AI (PI-CAI)](https://pi-cai.grand-challenge.org/) Grand Challenge.
+This repository contains standardized functions to evaluate 3D detection and diagnosis performance in medical imaging —with its evaluation strategy being geared towards clinically significant prostate cancer (csPCa) detection in MRI. It is used for the official evaluation pipeline of the [PI-CAI challenge](https://pi-cai.grand-challenge.org/).
 
-![Detection pipeline overview](detection-pipeline.png)
-_Figure: overview of a lesion detection and evaluation pipeline._
+## Supported Evaluation Metrics
+- **Average Precision (AP)**
+- **Area Under the Receiver Operating Characteristic curve (AUROC)**
+- **Overall AI Ranking Metric of the [PI-CAI challenge](https://pi-cai.grand-challenge.org/): `(AUROC + AP) / 2`**
+- **Precision-Recall (PR) curve**
+- **Receiver Operating Characteristic (ROC) curve**
+- **Free-Response Receiver Operating Characteristic (FROC) curve**
 
-Supported evaluation metrics:
-- Average Precision (AP)
-- Area Under the Receiver Operating Characteristic curve (AUROC)
-- PI-CAI ranking metric: `(AUROC + AP) / 2`
-- Precision-Recall (PR) curve
-- Receiver Operating Characteristic (ROC) curve
-- Free-Response Receiver Operating Characteristic (FROC) curve
-
-Supported evaluation options:
-- Case-wise sample weight (also applied to lesion-level evaluation, with same weight for all lesion candidates of the same case).
-- Subset analysis by providing a list of case identifiers.
-
-See [**Accessing metrics after evaluation**](#accessing-metrics-after-evaluation) to learn how to access these metrics.
+## Additional Supported Functionalities
+- **Subset Analysis**: By providing a list of case identifiers, performance can be evaluated for only that specific subset.
+- **Case-Wise Sample Weighting**: Sample weighting can help facilitate [inverse probability weighting](https://www.bmj.com/content/352/bmj.i189). Note, when this feature is used in conjunction with lesion-level evaluation, the same weight is applied to all lesion candidates of the same case. Lesion-wise sample weighting is currently not supported.
+- **Statistical Tests**: Permutation tests and bootstrapping techniques to facilitate AI vs AI/radiologists comparisons in the [PI-CAI challenge](https://pi-cai.grand-challenge.org/).
 
 ## Installation
 `picai_eval` is pip-installable:
 
 `pip install git+https://github.com/DIAGNijmegen/picai_eval`
 
+## Evaluation Pipeline
+![Detection pipeline overview](detection-pipeline.png)
+_Figure: Detection/diagnosis evaluation pipeline of the [PI-CAI challenge](https://pi-cai.grand-challenge.org/). (top) Lesion-level csPCa detection (modeled by 'AI'): For a given patient case, using the bpMRI exam, predict a 3D detection map of non-overlapping, non-connected csPCa lesions (with the same dimensions and resolution as the T2W image). For each predicted lesion, all voxels must comprise a single floating point value between 0-1, representing that lesion’s likelihood of harboring csPCa. (bottom) Patient-level csPCa diagnosis (modeled by 'f(x)'): For a given patient case, using the predicted csPCa lesion detection map, compute a single floating point value between 0-1, representing that patient’s overall likelihood of harboring csPCa. For instance, f(x) can simply be a function that takes the maximum of the csPCa lesion detection map, or it can be a more complex heuristic (defined by the AI developer)._
+
 
 ## Usage
-The evaluation pipeline expects **detection maps** and **annotations** in the following format:
-- detection maps: 3D volumes with connected components (in 3D) of the same _confidence_. Each detection map may contain an arbitrary number of connected components.
-- annotations: 3D volumes with connected components (in 3D) with `1` as the target class and `0` as background.
 
-Note: we define a _connected component_ as all non-zero voxels with _squared connectivity_ equal to two. This means that in a 3×3×3 neighbourhood all voxels are connected to the centre voxel, except for the eight voxels at the corners of the "cube".
+### Expected Predictions and Annotations
+Our evaluation pipeline expects **detection maps** and **annotations** in the following format:
+- **Detection Maps**: 3D volumes with non-connected, non-overlapping lesion detections. Each lesion detection is a connected component (in 3D) with the same _confidence or likelihood score_ (floating point) per voxel. Each detection map may contain an arbitrary number of such lesion detections.
 
-### Evaluate samples with Python
-To run the evaluation from Python, import the `evaluate` function and provide detection maps and annotations:
+- **Annotations**: 3D volumes of the same shape as their corresponding detection maps, with non-connected, non-overlapping ground-truth lesions. Each ground-truth lesion is a connected component (in 3D) with the integer value 1 per voxel. Background voxels are represented by the integer value 0.
+
+Note, we define a _connected component_ as all non-zero voxels with _squared connectivity_ equal to two. This means that in a 3×3×3 neighbourhood all voxels are connected to the centre voxel, except for the eight voxels at the corners of the "cube".
+
+#
+
+### Evaluate Individual Detection Maps with Python
+To run evaluation scripts from Python, import the `evaluate` function and provide detection maps (`y_det`) and annotations (`y_true`):
 
 ```python
 from picai_eval import evaluate
@@ -48,28 +53,36 @@ subject_list = [
 metrics = evaluate(
     y_det=y_det,
     y_true=y_true,
-    subject_list=subject_list,  # may be omitted
+    subject_list=subject_list,  # optional
 )
 ```
 
-- `y_det` iterable of all detection_map volumes to evaluate. Each detection map should a 3D volume containing connected components (in 3D) of the same confidence. Each detection map may contain an arbitrary number of connected components, with different or equal confidences.
-Alternatively, y_det may contain filenames ending in .nii.gz/.mha/.mhd/.npy/.npz, which will be loaded on-the-fly.
-- `y_true`: iterable of all ground truth labels. Each label should be a 3D volume of the same shape as the corresponding detection map. Alternatively, `y_true` may contain filenames ending in .nii.gz/.mha/.mhd/.npy/.npz, which should contain binary labels and be loaded on-the-fly. Use `1` to encode ground truth lesion, and `0` to encode background.
+- `y_det`: Iterable of all detection maps to evaluate. Each detection map is a 3D volume with non-connected, non-overlapping lesion detections. Each lesion detection is a connected component (in 3D) with the same _confidence or likelihood score_ per voxel. Each detection map may contain an arbitrary number of such lesion detections. Alternatively, `y_det` may contain filenames of detection maps ending in `.nii.gz`/`.mha`/`.mhd`/`.npy`/`.npz`, which will be loaded on-the-fly.
 
-The default parameters will perform the evaluation as used in the PI-CAI challenge. Optionally, the evaluation can be adapted using the following parameters:
+- `y_true`: Iterable of all ground-truth annotations. Each annotation should be a 3D volume of the same shape as its corresponding detection map, with non-connected, non-overlapping ground-truth lesions. `1` is used to encode ground-truth lesions, and `0` is to encode the background. Alternatively, `y_true` may contain filenames of binary annotations ending in .nii.gz/.mha/.mhd/.npy/.npz, which will be loaded on-the-fly. 
 
-- `sample_weight`: case-level sample weight. These weights will also be applied to the lesion-level evaluation, with same weight for all lesion candidates of the same case.
-- `subject_list`: list of sample identifiers, to give recognizable names to the evaluation results.
-- `min_overlap`: defines the minimal required Intersection over Union (IoU) or Dice similarity coefficient (DSC) between a lesion candidate and ground truth lesion, to be counted as a true positive detection. Default: 0.1.
-- `overlap_func`: function to calculate overlap between a lesion candidate and ground truth mask. May be 'IoU' for Intersection over Union, or 'DSC' for Dice similarity coefficient. Alternatively, provide a function with signature `func(detection_map, annotation) -> overlap [0, 1]`. Default: IoU.
-- `case_confidence`: function to derive case-level confidence from lesion-level confidences. Default: max.
-- `multiple_lesion_candidates_selection_criteria`: when multiple lesion candidates have sufficient overlap with the ground truth lesion mask, this determines which lesion candidate is selected as TP. Default: overlap.
-- `allow_unmatched_candidates_with_minimal_overlap`: when multiple lesion candidates have sufficient overlap with the ground truth lesion mask, this determines whether the lesion that is not selected counts as a false positive. Default: not counted as false positive.
-- `num_parallel_calls`: number of threads to use for evaluation. Default: 8.
+Default parameters will perform evaluation as per the specifications of the [PI-CAI challenge](https://pi-cai.grand-challenge.org/). Optionally, the specifications for evaluation can be adapted using the following parameters:
 
+- `sample_weight`: Case-level sample weight. When this feature is used in conjunction with lesion-level evaluation, the same weight is applied to all lesion candidates of the same case. Lesion-wise sample weighting is currently not supported.
 
-### Evaluate samples stored in a folder
-To evaluate detection maps stored on disk, prepare the input folders in the following format:
+- `subject_list`: List of sample identifiers, to give recognizable names to the evaluation results.
+
+- `min_overlap`: Defines the threshold of the hit criterion, i.e. the minimal required Intersection over Union (IoU) or Dice similarity coefficient (DSC) between predicted lesion candidates and ground-truth lesions, for predicted lesions to be counted as true positive detections. Default value: 0.1.
+
+- `overlap_func`: Function used to calculate the basis of the hit criterion, i.e. the object overlap between predicted lesion candidates and ground-truth lesions. This can be set as 'IoU' to use Intersection over Union, or 'DSC' to use Dice similarity coefficient. Alternatively, any other function can also be provided with the signature `func(detection_map, annotation) -> overlap [0, 1]`. Default value: 'IoU'.
+
+- `case_confidence`: Function used to derive case-level prediction or confidence, from lesion-level detections or confidences (as denoted by 'f(x)' in ['Evaluation Pipeline'](#evaluation-pipeline). Default value: 'max' (which simply takes the maximum of the detection map, as the case-level prediction).
+
+- `multiple_lesion_candidates_selection_criteria`: Used to account for [split-merge scenarios](https://www.nature.com/articles/s41598-020-64803-w/figures/1). When multiple lesion candidates have sufficient overlap with the ground-truth lesion, this condition determines which lesion candidate is selected as the true positive, and which lesion candidates are discarded or counted as false positives. Default value: 'overlap' (which selects the lesion candidate with the highest degree of overlap).
+
+- `allow_unmatched_candidates_with_minimal_overlap`: Used to account for [split-merge scenarios](https://www.nature.com/articles/s41598-020-64803-w/figures/1). When multiple lesion candidates have sufficient overlap with the ground-truth lesion, this condition determines whether non-selected lesion candidates are discarded or count as false positives. Default value: False (i.e. non-selected lesion candidates are not counted as false positives).
+
+- `num_parallel_calls`: Number of CPU threads used to process evaluation. Default value: 8.
+
+#
+
+### Evaluate All Detection Maps stored in a Specific Folder
+To evaluate numerous detection maps stored on disk, prepare input folders in the following format:
 
 ```
 path/to/detection_maps/
@@ -84,9 +97,10 @@ path/to/annotations/
 ├── [case-2]_label.nii.gz
 ```
 
-See [here](https://github.com/DIAGNijmegen/picai_eval/tree/public-release-prep/tests/test-maps) for an example. If the folders containing the detection maps and annotations are different, then the `_detection_map` and `_label` postfixes are optional. The allowed file extensions are: `.npz` from nnUNet, `.npy`, `.nii.gz`, `.nii`, `.mha` and `.mhd`. The first file matching one of these extensions (in the order shown here) is selected.
+See [here](https://github.com/DIAGNijmegen/picai_eval/tree/public-release-prep/tests/test-maps) for an example. If the folders containing all detection maps and annotations are different, then the `_detection_map` and `_label` suffixes are optional. Allowed file extensions are: `.npz` (as used in the [nnU-Net](https://github.com/MIC-DKFZ/nnUNet)), `.npy`, `.nii.gz`, `.nii`, `.mha` and `.mhd`. First file matching one of these extensions (in the order stated in the previous sentence) is selected.
 
-Evaluation of samples stored in a folder can be performed from Python:
+**Using Python:**  
+Evaluates all cases specified in `subject_list`. Function `evaluate_folder` also accepts all parameters described [above](#evaluate-individual-detection-maps-with-python).
 
 ```python
 from picai_eval import evaluate_folder
@@ -100,23 +114,23 @@ subject_list = [
 metrics = evaluate_folder(
     y_det_dir="path/to/detection_maps",
     y_true_dir="path/to/annotations",
-    subject_list=subject_list,  # may be omitted
+    subject_list=subject_list,          # optional
 )
 ```
 
-This will evaluate the cases specified in `subject_list`. The `evaluate_folder` function also accepts all parameters described [above](#python).
-
-To run the evaluation from the command line:
+**Using the Command Line:**  
+Evaluates all cases found in `path/to/detection_maps` against the annotations in `path/to/annotations`, and store the metrics in `path/to/detection_maps/metrics.json`. Optionally, the `--labels` parameter may be omitted, which will then default to the `--input` folder. To specify the output location of the metrics, use `--output /path/to/metrics.json`.
 
 ```bash
 python -m picai_eval --input path/to/detection_maps --labels path/to/annotations
 ```
 
-This will evaluate all cases found in `path/to/detection_maps` against the annotations in `path/to/annotations`, and store the metrics in `path/to/detection_maps/metrics.json`. Optionally, the `--labels` parameter may be omitted, which will default to the `--input` folder. To specify the output location of the metrics, use `--output /path/to/metrics.json`.
+#
 
-### Evaluate softmax predictions
-To evaluate softmax predictions (instead of detection maps), the function to extract lesion candidates from the softmax prediction volume must be provided. The dynamic lesion extraction procedure from the [Report-Guided Annotation module](https://github.com/DIAGNijmegen/Report-Guided-Annotation) can be used for this (see [mechanism](https://github.com/DIAGNijmegen/Report-Guided-Annotation#mechanism) for a depiction of the dynamic lesion extraction procedure).
+### Evaluate Softmax Volumes (instead of Detection Maps)
+To evaluate softmax predictions (instead of detection maps), a function to extract lesion candidates from the softmax volume must be provided. For instance, the dynamic lesion extraction method from the [`report_guided_annotation`](https://github.com/DIAGNijmegen/Report-Guided-Annotation) module can be used for this (see [mechanism](https://github.com/DIAGNijmegen/Report-Guided-Annotation#mechanism) for a depiction of its working principle).
 
+**Evaluating Individual Softmax Volumes using Python:**
 ```python
 from picai_eval import evaluate
 from report_guided_annotation import extract_lesion_candidates
@@ -129,8 +143,7 @@ metrics = evaluate(
 )
 ```
 
-To evaluate a folder containing softmax predictions:
-
+**Evaluating All Softmax Volumes stored in a Specific Folder:**
 ```python
 from picai_eval import evaluate_folder
 from report_guided_annotation import extract_lesion_candidates
@@ -142,26 +155,9 @@ metrics = evaluate_folder(
 )
 ```
 
-## Storing and reading Metrics
-Metrics can be easily saved and loaded to/from disk, to facilitate evaluation of multiple models, and subsequent (statistical) analysis. To read metrics, provide the path:
+#
 
-```python
-from picai_eval import Metrics
-
-metrics = Metrics("path/to/metrics.json")
-```
-
-To save metrics, provide the path to save the metrics to:
-
-```python
-metrics.save("path/to/metrics.json")
-# metrics.save_full("path/to/metrics.json")  # also store derived curves
-# metrics.save_minimal("path/to/metrics.json")  # only store minimal information to re-load Metrics
-```
-
-The command line interface described in [Evaluate samples stored in a folder](#evaluate-samples-stored-in-a-folder) will automatically save the metrics to disk. It's output path can be controlled with the `--output` parameter.
-
-## Accessing metrics after evaluation
+### Accessing Metrics after Evaluation
 To access metrics after evaluation, we recommend using the `Metrics` class:
 
 ```python
@@ -185,7 +181,7 @@ sensitivity = metrics.lesion_TPR
 fp_per_case = metrics.lesion_FPR
 ```
 
-These can for example be used to plot the performance curves:
+For example, these can be used to plot performance curves:
 
 ```python
 import matplotlib.pyplot as plt
@@ -210,7 +206,7 @@ ax.set_xlabel("False positives per case"); ax.set_ylabel("Sensitivity")
 plt.show()
 ```
 
-To perform subset analysis, a list of _subject IDs_ can be provided. To view the available subject IDs, run `print(metrics.subject_list)`. Currently, the lesion-wise weights are not automatically re-computed for the subset, so these must be provided manually.
+To perform subset analysis, a list of _subject IDs_ can be provided. To view all available subject IDs, run `print(metrics.subject_list)`. Currently, lesion-wise sample weights are not automatically re-computed for the subset, so these must be provided manually.
 
 ```python
 subject_list = [..., ...]  # list of case identifiers
@@ -228,22 +224,46 @@ metrics.lesion_weight = [1] * len(metrics.lesion_results_flat)
 print(metrics)  # prints performance for specified subset
 ```
 
-All performance metrics can be accessed in the same manner as for the full set.
+All performance metrics for a subset, can be accessed in the same manner as for the full set.
 
-## Statistical tests
-The PI-CAI challenge features AI vs AI, AI vs Radiologists from Clinical Routine and AI vs Panel of Readers. Each of these comparisons come with a statistical test. For AI vs AI, a permuations test with the ranking metric is performend. Readers cannot be assigned a ranking metric without introducing bias, so for AI vs Panel of Readers and AI vs Single Reader we compare performance at matched operating points. See each section below for more details.
+#
 
-**Note**: extended tests to verify if the statistical tests are well-calibrated (i.e., don't over- or underestimate the p-value), will be performed in the future.
+### Storing and Reading Metrics
+Metrics can be easily saved and loaded to/from disk, to facilitate evaluation of multiple models, and subsequent (statistical) analyses. To read metrics, simply provide the path to the saved `.json` file:
+
+```python
+from picai_eval import Metrics
+
+metrics = Metrics("path/to/metrics.json")
+```
+
+To save metrics, provide the path to save a corresponding `.json` file:
+
+```python
+metrics.save("path/to/metrics.json")
+# metrics.save_full("path/to/metrics.json")     # also store derived curves
+# metrics.save_minimal("path/to/metrics.json")  # only store minimal information to reload Metrics instance
+```
+
+Command line interface described in ['Evaluate All Detection Maps stored in a Specific Folder'](#evaluate-all-detection-maps-stored-in-a-specific-folder)) will automatically save metrics to disk. Its output path can be controlled with the `--output` parameter.
+
+<br>
+
+## Statistical Tests
+The [PI-CAI challenge](https://pi-cai.grand-challenge.org/) features 'AI vs AI', 'AI vs Radiologists from Clinical Routine' and 'AI vs Radiologists from Reader Study' comparisons. Each of these comparisons come with a statistical test. For 'AI vs AI', a permuations test with the overall ranking metric is performend. Readers cannot be assigned a ranking metric without introducing bias, so for 'AI vs Radiologists from Reader Study' and 'AI vs Radiologists from Clinical Routine', we compare performance at matched operating points. See each section below for more details.
+
+**Note**: Extended tests to verify whether a given statistical test is well-calibrated (i.e. it does not over-/under-estimate the p-value), will be incorporated in the future.
+
+#
 
 ### AI vs AI
-**Comparison**: Between pairs of AI algorithms, with multiple restarts per AI algorithm.
+**Comparison**: Between a given pair of AI algorithms, with multiple independently trained instances per AI algorithm.
 
-**Statistical question**: What is the probability that one AI algorithm outperforms another, while accounting for the performance variance stemming from each AI algorithm’s training method?
+**Statistical Question**: What is the probability that one AI algorithm outperforms another, while accounting for the performance variance stemming from each AI algorithm’s training method?
 
-**Statistical test**: Permutation tests (as applied in Ruamviboonsuk et al., 2022, Bulten et al., 2022, McKinney et al., 2020). In each replication, performance metrics (ranking score, AP or AUROC) are shuffled across methods (different AI algorithms) and their instances (independently trained samples of each method).
+**Statistical Test**: Permutation tests (as applied in [Ruamviboonsuk et al., 2022](https://www.thelancet.com/journals/landig/article/PIIS2589-7500(22)00017-6/fulltext), [McKinney et al., 2020](https://www.nature.com/articles/s41586-019-1799-6) and [Bulten et al., 2022](https://www.nature.com/articles/s41591-021-01620-2)). In each replication, performance metrics (ranking score, AP or AUROC) are shuffled across methods (different AI algorithms) and their instances (independently trained samples of each method).
 
-The permutation test using the performance metrics can be used as follows:
-
+Permutation test can be used as follows:
 ```python
 from picai_eval.statistical_helper import perform_permutation_test
 
@@ -259,7 +279,7 @@ p = perform_permutation_test(
 # p-value should be 0.7218614718614719
 ```
 
-This will calculate the p-value for the null hypothesis _Performance(baseline algorithm) > Performance(alternative algorithm)_ (given the evidence of the provided performance metrics). The scores shown above (0.92, 0.94, etc.) are **performance metrics**, not model predictions. These could for example be obtained from the evaluation pipeline:
+This will calculate the p-value for the null hypothesis _Performance(baseline algorithm) > Performance(alternative algorithm)_ (given the provided or observed performance metrics). Note, the scores shown above (0.92, 0.94, etc.) are **performance metrics** (e.g. AUROC, AP), not model predictions (i.e. likelihood score predicted per case). Performance metrics can be obtained from the evaluation pipeline, as follows:
 
 ```python
 from picai_eval import Metrics
@@ -274,18 +294,18 @@ scores_algorithm = [
     ]
 ]
 ```
+#
 
 ### AI vs Radiologists from Clinical Routine
-**Comparison**: Between AI algorithm, and the historical reads made by radiologists during clinical routine.
+**Comparison**: Between multiple independently trained instances of a given AI algorithm, and the historical reads made by radiologists during clinical routine.
 
-**Statistical question**: What is the probability that a given trained AI algorithm outperforms radiologists from clinical routine, while accounting for the performance variance stemming from different cases and the AI algorithm’s training method? 
+**Statistical Question**: What is the probability that a given trained AI algorithm outperforms radiologists from clinical routine, while accounting for the performance variance stemming from different cases and the AI algorithm’s training method? 
 
-**Statistical test**: Paired bootstrapping (as applied in Ruamviboonsuk et al., 2022, McKinney et al., 2020, Rodriguez-Ruiz et al., 2019), using predictions from a given operating point. Here, the operating point is that of radiologists (PI-RADS ≥ 3 or PI-RADS ≥ 4) from clinical routine. Trained AI algorithms are thresholded to match the radiologist's sensitivity/specificity (for patient diagnosis) or recall/precision (for lesion detection). In each of 1M replications, ∼U(0,N) cases are sampled with replacement, and used to calculate the _test statistic_. Iterations that sample only one class are rejected. The test statistic is the rank of historical reads made by radiologists, with respect to the predictions made by trained AI algorithms, where the rank is determined by the conjugate performance metric.
+**Statistical Test**: Paired bootstrapping (as applied in [Ruamviboonsuk et al., 2022](https://www.thelancet.com/journals/landig/article/PIIS2589-7500(22)00017-6/fulltext), [McKinney et al., 2020](https://www.nature.com/articles/s41586-019-1799-6), [Rodriguez-Ruiz et al., 2019](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6748773/)), using predictions from a given operating point. Here, the operating point is that of radiologists ([PI-RADS](https://www.europeanurology.com/article/S0302-2838(19)30180-0/fulltext) ≥ 3 or [PI-RADS](https://www.europeanurology.com/article/S0302-2838(19)30180-0/fulltext) ≥ 4) from clinical routine. Trained AI algorithms are thresholded to match the radiologist's sensitivity/specificity (for patient diagnosis) or recall/precision (for lesion detection). In each of 1M replications, ∼U(0,N) cases are sampled with replacement, and used to calculate the _test statistic_. Iterations that sample only one class are rejected. Here, the test statistic is the rank of historical reads made by radiologists, with respect to the predictions made by trained AI algorithms, where the rank is determined by the conjugate performance metric.
 
-**Note**: In contrast to the [permutation test](#ai-vs-ai), bootstrapping approximates the statistical question. As a result, the p-value from bootstrapping can be mis-calibrated, giving p-values that are higher or lower than they should be. The permutation test does not have this issue, but cannot be applied in this scenario, because we have only a single radiological prediction per case.
+**Note**: In contrast to the [permutation test](#ai-vs-ai), bootstrapping approximates the statistical question. As a result, the p-value from bootstrapping can be miscalibrated (i.e. giving p-values that are higher or lower than they should be). The permutation test does not have this issue, but cannot be applied in this scenario, because we have only a single radiologist prediction per case.
 
-The matched bootstrapping test can be used as follows:
-
+Matched bootstrapping test can be used as follows:
 ```python
 import numpy as np
 from picai_eval.statistical_helper import perform_matched_boostrapping
@@ -311,8 +331,7 @@ p = perform_matched_boostrapping(
 # Probability for Performance(AI) > Performance(Reader): p = 0.3 (approximately)
 ```
 
-The predictions shown above (0.92, 0.23, ..., 0.95 and 5, 4, ..., 2 etc.) are **predictions**, not performance metrics. The predictions for the historical read should be thresholded (e.g. PI-RADS ≥ 3 or PI-RADS ≥ 4), while the predictions for the algorithm should be confidences between 0 and 1. These could for example be obtained from the evaluation pipeline:
-
+Note, the numbers shown above (0.92, 0.23, ..., 0.95 and 5, 4, ..., 2 etc.) are **predictions** (i.e. likelihood score predicted per case), not performance metrics (e.g. AUROC, AP). All radiologist predictions must be binarized (e.g. thresholded at [PI-RADS](https://www.europeanurology.com/article/S0302-2838(19)30180-0/fulltext) ≥ 3 or [PI-RADS](https://www.europeanurology.com/article/S0302-2838(19)30180-0/fulltext) ≥ 4), while all predictions for the algorithm must be likelihood scores between 0 and 1 inclusive. Predictions be obtained from the evaluation pipeline, as follows:
 ```python
 from picai_eval import Metrics
 
@@ -326,13 +345,14 @@ y_pred_ai = [
     ]
 ]
 ```
+# 
 
 ### AI vs Radiologists from Reader Study
-**Comparison**: Between AI algorithm, and a given panel of readers.
+**Comparison**: Between multiple independently trained instances of a given AI algorithm, and a given panel of radiologists or readers.
 
-**Statistical question**: What is the probability that a given AI algorithm outperforms the typical reader from a given panel of radiologists, while accounting for the performance variance stemming from different readers, and the AI algorithm’s training method?
+**Statistical Question**: What is the probability that a given AI algorithm outperforms the typical reader from a given panel of radiologists, while accounting for the performance variance stemming from different readers, and the AI algorithm’s training method?
 
-**Statistical test**: Permutation test (as applied in Ruamviboonsuk et al., 2022, Bulten et al., 2022, McKinney et al., 2020). Permutation tests are used to statistically compare lesion-level detection and patient-level diagnosis performance at PI-RADS operating points. Here, in each of the replications, performance metrics (reader performance w.r.t. AI performance at reader’s operating point) are shuffled across methods (AI, radiologists) and their instances (independently trained samples of AI algorithm, different readers).
+**Statistical Test**: Permutation test (as applied in [Ruamviboonsuk et al., 2022](https://www.thelancet.com/journals/landig/article/PIIS2589-7500(22)00017-6/fulltext), [McKinney et al., 2020](https://www.nature.com/articles/s41586-019-1799-6) and [Bulten et al., 2022](https://www.nature.com/articles/s41591-021-01620-2)). Permutation tests are used to statistically compare lesion-level detection and patient-level diagnosis performance at PI-RADS operating points. Here, in each of the replications, performance metrics (reader performance w.r.t. AI performance at reader’s operating point) are shuffled across methods (AI, radiologists) and their instances (independently trained samples of AI algorithm, different readers).
 
 ```python
 import numpy as np
@@ -362,7 +382,7 @@ p = perform_matched_permutation_test(
 # Probability for Performance(Panel of readers) > Performance(AI): p = 0.8 (approximately)
 ```
 
-The predictions shown above (0.92, 0.23, ..., 0.95 and 5, 4, ..., 2 etc.) are **predictions**, not performance metrics. The predictions for the readers should be thresholded (e.g. PI-RADS ≥ 3 or PI-RADS ≥ 4), while the predictions for the algorithm should be confidences between 0 and 1. These could for example be obtained from the evaluation pipeline:
+Note, the numbers shown above (0.92, 0.23, ..., 0.95 and 5, 4, ..., 2 etc.) are **predictions** (i.e. likelihood score predicted per case), not performance metrics (e.g. AUROC, AP). All radiologist predictions must be binarized (e.g. thresholded at [PI-RADS](https://www.europeanurology.com/article/S0302-2838(19)30180-0/fulltext) ≥ 3 or [PI-RADS](https://www.europeanurology.com/article/S0302-2838(19)30180-0/fulltext) ≥ 4), while all predictions for the algorithm must be likelihood scores between 0 and 1 inclusive. Predictions be obtained from the evaluation pipeline, as follows:
 
 ```python
 from picai_eval import Metrics
@@ -377,3 +397,28 @@ y_pred_ai = [
     ]
 ]
 ```
+
+## Reference
+If you are using this codebase or some part of it, please cite the following article:
+
+● [A. Saha, J. J. Twilt, J. S. Bosma, B. van Ginneken, D. Yakar, M. Elschot, J. Veltman, J. J. Fütterer, M. de Rooij, H. Huisman, "Artificial Intelligence and Radiologists at Prostate Cancer Detection in MRI: The PI-CAI Challenge (Study Protocol)", DOI: 10.5281/zenodo.6522364](https://zenodo.org/record/6522364#.YnessuhBy2Q)
+
+**BibTeX:**
+```
+@ARTICLE{PICAI_BIAS,
+    author = {Anindo Saha, Jasper J. Twilt, Joeran S. Bosma, Bram van Ginneken, Derya Yakar, Mattijs Elschot, Jeroen Veltman, Jurgen Fütterer, Maarten de Rooij, Henkjan Huisman},
+    title  = {{Artificial Intelligence and Radiologists at Prostate Cancer Detection in MRI: The PI-CAI Challenge (Study Protocol)}}, 
+    year   = {2022},
+    doi    = {10.5281/zenodo.6522364}
+}
+```
+
+## Managed By
+Diagnostic Image Analysis Group,
+Radboud University Medical Center,
+Nijmegen, The Netherlands
+
+## Contact Information
+- Joeran Bosma: Joeran.Bosma@radboudumc.nl
+- Anindo Saha: Anindya.Shaha@radboudumc.nl
+- Henkjan Huisman: Henkjan.Huisman@radboudumc.nl
