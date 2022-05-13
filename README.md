@@ -252,6 +252,8 @@ Command line interface described in ['Evaluate All Detection Maps stored in a Sp
 ## Statistical Tests
 The [PI-CAI challenge](https://pi-cai.grand-challenge.org/) features 'AI vs AI', 'AI vs Radiologists from Clinical Routine' and 'AI vs Radiologists from Reader Study' comparisons. Each of these comparisons come with a statistical test. For 'AI vs AI', a permuations test with the overall ranking metric is performend. Readers cannot be assigned a ranking metric without introducing bias, so for 'AI vs Radiologists from Reader Study' and 'AI vs Radiologists from Clinical Routine', we compare performance at matched operating points. See each section below for more details.
 
+For the following tests, we assume that each AI algorithm is trained on the same training dataset and evaluated on the same testing dataset, multiple times (5-10x), and all of these independently trained instances are used in each statistical test. By doing so, we account for the performance variance resulting from the stochastic optimization of machine/deep learning models (due to which, the same AI architecture, trained on the same data, for the same number of training steps, typically can exhibit different performance each time). Our goal is to avoid basing any conclusions off of one arbitrary training run (which may prove “lucky” or “unlucky” for a given AI algorithm), and to promote reproducibility. Thus, we statistically evaluate the overall AI algorithm, and not only a single trained instance of that algorithm.
+
 **Note**: Extended tests to verify whether a given statistical test is well-calibrated (i.e. it does not over-/under-estimate the p-value), will be incorporated in the future.
 
 #
