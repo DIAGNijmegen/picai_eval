@@ -281,7 +281,7 @@ p = perform_permutation_test(
 # p-value should be 0.7218614718614719
 ```
 
-This will calculate the p-value for the null hypothesis _Performance(baseline algorithm) > Performance(alternative algorithm)_ (given the provided or observed performance metrics). Note, the scores shown above (0.92, 0.94, etc.) are **performance metrics** (e.g. AUROC, AP), not model predictions (i.e. likelihood score predicted per case). Performance metrics can be obtained from the evaluation pipeline, as follows:
+This will calculate the p-value for the null hypothesis _Performance(baseline algorithm) > Performance(alternative algorithm)_ (given the provided or observed performance metrics). Note, the scores shown above (0.92, 0.94, etc.) are **performance metrics** (e.g. AUROC, AP), not model predictions (i.e. likelihood score predicted per case). While using individual predictions provides more, correlated samples (numerous individual predictions are associated with the same, single trained instance of an AI model) for the permutation test, using overall performance metrics provides relatively fewer, but independent samples (only a single overall performance metric is associated with the same, single trained instance of an AI model). Hence, we opt for the latter and use multiple training runs to facilitate the same. Performance metrics can be obtained from the evaluation pipeline, as follows:
 
 ```python
 from picai_eval import Metrics
