@@ -79,7 +79,7 @@ def test_evaluation(y_det, y_true):
     assert metrics.lesion_TP[-2] == 5
     assert metrics.lesion_FP[-2] == 4
     assert metrics.num_lesions - metrics.lesion_TP[-2] == 5
-    assert metrics.AP == (10/14)*(1/2) + (5/9)*(1/2)
+    assert metrics.AP == (5/9)*(1/2) + 0*(1/2)
 
     # check lesion_results
     lesion_results_flat = [
@@ -105,7 +105,7 @@ def test_evaluation_DSC(y_det, y_true):
     assert metrics.lesion_TP[-2] == 5
     assert metrics.lesion_FP[-2] == 4
     assert metrics.num_lesions - metrics.lesion_TP[-2] == 5
-    assert metrics.AP == (10/14)*(1/2) + (5/9)*(1/2)
+    assert metrics.AP == (5/9)*(1/2) + 0*(1/2)
 
 
 def test_evaluation_prediction_padding(y_det, y_true):
@@ -215,7 +215,7 @@ def test_evaluation_from_dir_with_subject_list():
     assert metrics.lesion_TP[-2] == 5
     assert metrics.lesion_FP[-2] == 4
     assert metrics.num_lesions - metrics.lesion_TP[-2] == 5
-    assert metrics.AP == (10/14)*(1/2) + (5/9)*(1/2)
+    assert metrics.AP == (5/9)*(1/2) + 0*(1/2)
 
 
 def test_evaluation_from_dir_without_subject_list():
@@ -226,7 +226,7 @@ def test_evaluation_from_dir_without_subject_list():
     assert metrics.lesion_TP[-2] == 5
     assert metrics.lesion_FP[-2] == 4
     assert metrics.num_lesions - metrics.lesion_TP[-2] == 5
-    assert metrics.AP == (10/14)*(1/2) + (5/9)*(1/2)
+    assert metrics.AP == (5/9)*(1/2) + 0*(1/2)
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="GitHub Actions' Windows does not like check_call")

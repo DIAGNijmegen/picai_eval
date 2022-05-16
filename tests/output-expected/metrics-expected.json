@@ -1,6 +1,6 @@
 {
     "auroc": 0.75,
-    "AP": 0.6349206349206349,
+    "AP": 0.2777777777777778,
     "num_cases": 10,
     "num_lesions": 10,
     "lesion_results": {

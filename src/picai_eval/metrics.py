@@ -17,7 +17,7 @@ from __future__ import print_function
 from dataclasses import dataclass
 import numpy as np
 from pathlib import Path
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
+from sklearn.metrics import roc_curve, auc, precision_recall_curve
 
 from typing import List, Tuple, Dict, Any, Union, Optional, Hashable
 try:
@@ -239,18 +239,23 @@ class Metrics:
         y_pred: "npt.NDArray[np.float64]" = np.array([pred for _, pred, *_ in lesion_y_list])
 
         # calculate precision-recall curve
-        precision, recall, _ = precision_recall_curve(
+        precision, recall, thresholds = precision_recall_curve(
             y_true=y_true,
             probas_pred=y_pred,
             sample_weight=self.lesion_weight
         )
 
-        # calculate average precision
-        AP = average_precision_score(
-            y_true=y_true,
-            y_score=y_pred,
-            sample_weight=self.lesion_weight
-        )
+        # set precision to zero at a threshold of "zero", as those lesion
+        # candidates are included just to convey the number of lesions to
+        # the precision_recall_curve function, and not actual candidates
+        precision[:-1][thresholds == 0] = 0
+
+        # calculate average precision using the step function integral
+        # The following works because the last entry of precision is
+        # guaranteed to be 1, as returned by precision_recall_curve
+        # Taken from https://github.com/scikit-learn/scikit-learn/blob/
+        # 32f9deaaf27c7ae56898222be9d820ba0fd1054f/sklearn/metrics/_ranking.py#L212
+        AP = -np.sum(np.diff(recall) * np.array(precision)[:-1])
 
         return {
             'AP': AP,
