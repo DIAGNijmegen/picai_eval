@@ -59,7 +59,7 @@ metrics = evaluate(
 
 - `y_det`: Iterable of all detection maps to evaluate. Each detection map is a 3D volume with non-connected, non-overlapping lesion detections. Each lesion detection is a connected component (in 3D) with the same _confidence or likelihood score_ per voxel. Each detection map may contain an arbitrary number of such lesion detections. Alternatively, `y_det` may contain filenames of detection maps ending in `.nii.gz`/`.mha`/`.mhd`/`.npy`/`.npz`, which will be loaded on-the-fly.
 
-- `y_true`: Iterable of all ground-truth annotations. Each annotation should be a 3D volume of the same shape as its corresponding detection map, with non-connected, non-overlapping ground-truth lesions. `1` is used to encode ground-truth lesions, and `0` is to encode the background. Alternatively, `y_true` may contain filenames of binary annotations ending in .nii.gz/.mha/.mhd/.npy/.npz, which will be loaded on-the-fly. 
+- `y_true`: Iterable of all ground-truth annotations. Each annotation should be a 3D volume of the same shape as its corresponding detection map, with non-connected, non-overlapping ground-truth lesions. `1` is used to encode ground-truth lesions, and `0` is to encode the background. Alternatively, `y_true` may contain filenames of binary annotations ending in `.nii.gz`/`.mha`/`.mhd`/`.npy`/`.npz`, which will be loaded on-the-fly. 
 
 Default parameters will perform evaluation as per the specifications of the [PI-CAI challenge](https://pi-cai.grand-challenge.org/). Optionally, the specifications for evaluation can be adapted using the following parameters:
 
@@ -97,7 +97,7 @@ path/to/annotations/
 ├── [case-2]_label.nii.gz
 ```
 
-See [here](https://github.com/DIAGNijmegen/picai_eval/tree/public-release-prep/tests/test-maps) for an example. If the folders containing all detection maps and annotations are different, then the `_detection_map` and `_label` suffixes are optional. Allowed file extensions are: `.npz` (as used in the [nnU-Net](https://github.com/MIC-DKFZ/nnUNet)), `.npy`, `.nii.gz`, `.nii`, `.mha` and `.mhd`. First file matching one of these extensions (in the order stated in the previous sentence) is selected.
+See [here](https://github.com/DIAGNijmegen/picai_eval/tree/public-release-prep/tests/test-maps) for an example. If the folders containing all detection maps and annotations are different, then the `_detection_map` and `_label` suffixes are optional. Allowed file extensions are: `.npz` (as used in the [nnU-Net](https://github.com/MIC-DKFZ/nnUNet) framework), `.npy`, `.nii.gz`, `.nii`, `.mha` and `.mhd`. First file matching one of these extensions (in the order stated in the previous sentence) is selected.
 
 **Using Python:**  
 Evaluates all cases specified in `subject_list`. Function `evaluate_folder` also accepts all parameters described [above](#evaluate-individual-detection-maps-with-python).
