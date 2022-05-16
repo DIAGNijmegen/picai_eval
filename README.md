@@ -34,7 +34,7 @@ Our evaluation pipeline expects **detection maps** and **annotations** in the fo
 
 - **Annotations**: 3D volumes of the same shape as their corresponding detection maps, with non-connected, non-overlapping ground-truth lesions. Each ground-truth lesion is a connected component (in 3D) with the integer value 1 per voxel. Background voxels are represented by the integer value 0.
 
-Note, we define a _connected component_ as all non-zero voxels with _squared connectivity_ equal to two. This means that in a 3×3×3 neighbourhood all voxels are connected to the centre voxel, except for the eight voxels at the corners of the "cube".
+Note, we define a _connected component_ as all non-zero voxels with _squared connectivity_ equal to three. This means that in a 3×3×3 neighbourhood all voxels are connected to the centre voxel. See [26-Connectivity](https://en.wikipedia.org/wiki/Pixel_connectivity) for an illustration.
 
 #
 
