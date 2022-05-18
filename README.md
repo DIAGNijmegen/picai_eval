@@ -206,12 +206,11 @@ ax.set_xlabel("False positives per case"); ax.set_ylabel("Sensitivity")
 plt.show()
 ```
 
-To perform subset analysis, a list of _subject IDs_ can be provided. To view all available subject IDs, run `print(metrics.subject_list)`. Currently, lesion-wise sample weights are not automatically re-computed for the subset, so these must be provided manually.
+To perform subset analysis, a list of _subject IDs_ can be provided. To view all available subject IDs, run `print(metrics.subject_list)`.
 
 ```python
 subject_list = [..., ...]  # list of case identifiers
 metrics = Metrics("path/to/metrics.json", subject_list=subject_list)
-metrics.lesion_weight = [1] * len(metrics.lesion_results_flat)
 print(metrics)  # prints performance for specified subset
 ```
 
@@ -220,7 +219,6 @@ Or, with existing metrics:
 ```python
 metrics = ...  # from evaluate, evaluate_folder, or Metrics("/path/to/metrics.json")
 metrics.subject_list = subject_list
-metrics.lesion_weight = [1] * len(metrics.lesion_results_flat)
 print(metrics)  # prints performance for specified subset
 ```
 
