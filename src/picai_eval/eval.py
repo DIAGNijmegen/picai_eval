@@ -273,7 +273,7 @@ def evaluate(
     case_weight: Dict[Hashable, float] = {}
     case_pred: Dict[Hashable, float] = {}
     lesion_results: Dict[Hashable, List[Tuple[int, float, float]]] = {}
-    lesion_weight: List[float] = []
+    lesion_weight: Dict[Hashable, List[float]] = {}
 
     with ThreadPoolExecutor(max_workers=num_parallel_calls) as pool:
         # define the functions that need to be processed: compute_pred_vector, with each individual
@@ -316,7 +316,7 @@ def evaluate(
 
             # accumulate outputs
             lesion_results[idx] = lesion_results_case
-            lesion_weight += [weight] * len(lesion_results_case)
+            lesion_weight[idx] = [weight] * len(lesion_results_case)
 
     # collect results in a Metrics object
     metrics = Metrics(

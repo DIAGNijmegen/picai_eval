@@ -34,7 +34,7 @@ class Metrics:
     case_target: Optional[Dict[Hashable, int]] = None
     case_pred: Optional[Dict[Hashable, float]] = None
     case_weight: Optional[Union[Dict[Hashable, float], List[float]]] = None
-    lesion_weight: Optional[List[float]] = None
+    lesion_weight: Optional[Dict[Hashable, List[float]]] = None
     thresholds: "Optional[npt.NDArray[np.float64]]" = None
     subject_list: Optional[List[str]] = None
     sort: bool = True
@@ -68,10 +68,15 @@ class Metrics:
             else:
                 self.case_weight = {idx: weight for idx, weight in zip(subject_list, self.case_weight)}
 
+        if self.lesion_weight is None:
+            subject_list = sorted(list(self.lesion_results))
+            self.lesion_weight = {idx: [1]*len(case_y_list) for idx, case_y_list in self.lesion_results.items()}
+
         if self.sort:
             # sort dictionaries
             subject_list = sorted(list(self.lesion_results))
             self.lesion_results = {idx: self.lesion_results[idx] for idx in subject_list}
+            self.lesion_weight = {idx: self.lesion_weight[idx] for idx in subject_list}
             self.case_target = {idx: self.case_target[idx] for idx in subject_list}
             self.case_pred = {idx: self.case_pred[idx] for idx in subject_list}
             self.case_weight = {idx: self.case_weight[idx] for idx in subject_list}
@@ -126,6 +131,19 @@ class Metrics:
     def lesion_results_flat(self) -> List[Tuple[int, float, float]]:
         """Flatten the per-case y_list"""
         return self.get_lesion_results_flat()
+
+    def get_lesion_weight_flat(self, subject_list: Optional[List[str]] = None) -> List[float]:
+        """Retrieve lesion-wise sample weights (for a given subset of cases)"""
+        if subject_list is None:
+            subject_list = self.subject_list
+
+        # collect lesion weights (and flatten)
+        return [weight for subject_id in subject_list for weight in self.lesion_weight[subject_id]]
+
+    @property
+    def lesion_weight_flat(self) -> List[float]:
+        """Retrieve lesion-wise sample weights (for a given subset of cases)"""
+        return self.get_lesion_weight_flat()
 
     @property
     def precision(self) -> "npt.NDArray[np.float64]":
@@ -242,7 +260,7 @@ class Metrics:
         precision, recall, thresholds = precision_recall_curve(
             y_true=y_true,
             probas_pred=y_pred,
-            sample_weight=self.lesion_weight
+            sample_weight=self.get_lesion_weight_flat(subject_list=subject_list)
         )
 
         # set precision to zero at a threshold of "zero", as those lesion
@@ -291,6 +309,7 @@ class Metrics:
             "AP": self.AP,
             "num_cases": self.num_cases,
             "num_lesions": self.num_lesions,
+            "picai_eval_version": "1.3",
 
             # lesion-level results
             "lesion_results": self.lesion_results,
@@ -309,6 +328,7 @@ class Metrics:
             "AP": self.AP,
             "num_cases": self.num_cases,
             "num_lesions": self.num_lesions,
+            "picai_eval_version": "1.3",
 
             # lesion-level results
             "lesion_results": self.lesion_results,
@@ -357,7 +377,7 @@ class Metrics:
         self.case_target = {idx: int(float(val)) for idx, val in metrics['case_target'].items()}
         self.case_pred = {idx: float(val) for idx, val in metrics['case_pred'].items()}
         self.case_weight = {idx: float(val) for idx, val in metrics['case_weight'].items()}
-        self.lesion_weight = [float(val) for val in metrics['lesion_weight']]
+        self.lesion_weight = {idx: [float(val) for val in weights] for idx, weights in metrics['lesion_weight'].items()}
         self.lesion_results = {
             idx: [
                 (int(float(is_lesion)), float(confidence), float(overlap))
