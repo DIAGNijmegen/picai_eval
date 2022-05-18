@@ -302,6 +302,10 @@ class Metrics:
             'AUROC': auroc,
         }
 
+    @property
+    def version(self):
+        return "1.3"
+
     def as_dict(self):
         return {
             # aggregates
@@ -309,7 +313,7 @@ class Metrics:
             "AP": self.AP,
             "num_cases": self.num_cases,
             "num_lesions": self.num_lesions,
-            "picai_eval_version": "1.3",
+            "picai_eval_version": self.version,
 
             # lesion-level results
             "lesion_results": self.lesion_results,
@@ -328,7 +332,7 @@ class Metrics:
             "AP": self.AP,
             "num_cases": self.num_cases,
             "num_lesions": self.num_lesions,
-            "picai_eval_version": "1.3",
+            "picai_eval_version": self.version,
 
             # lesion-level results
             "lesion_results": self.lesion_results,
