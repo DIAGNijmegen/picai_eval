@@ -139,13 +139,19 @@ def test_sample_weights():
     """
     Test if functions apply sample weights correctly
     """
-    # check if sample weights are applied
 
     lesion_results = {
         "0": [(0, 1, 1.)],
         "1": [(0, 2, 1.)],
         "2": [(1, 3, 1.)],
         "3": [(1, 1, 1.), (1, 1, 1.)],
+    }
+
+    lesion_weight = {
+        "0": [1],
+        "1": [1],
+        "2": [1],
+        "3": [4, 5],
     }
 
     # calculate metrics without weights
@@ -155,12 +161,13 @@ def test_sample_weights():
     metrics_weighted = Metrics(
         lesion_results=lesion_results,
         case_weight=np.random.uniform(size=metrics.num_cases),
-        lesion_weight=np.random.uniform(size=5)
+        lesion_weight=lesion_weight
     )
 
     # verify weights are applied
     assert metrics.auroc != metrics_weighted.auroc, "Sample weight not applied to AUROC!"
     assert metrics.AP != metrics_weighted.AP, f"Sample weight not applied to AP! ({metrics.AP} == {metrics_weighted.AP})"
+    assert metrics_weighted.AP == 1*(1/10) + (10/12)*(9/10), f"Sample weight not applied correctly to AP! ({metrics.AP} != 0.85)"
 
     # check if sample weights are applied as expected
     # example adapted from: https://rdrr.io/cran/WeightedROC/f/inst/doc/Definition.pdf
