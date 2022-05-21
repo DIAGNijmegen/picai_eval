@@ -38,8 +38,8 @@ from picai_eval.analysis_utils import (
 
 # Compute base prediction metrics TP/FP/FN with associated model confidences
 def evaluate_case(
-    y_det: "Union[npt.NDArray[np.float32], str]",
-    y_true: "Union[npt.NDArray[np.int32], str]",
+    y_det: "Union[npt.NDArray[np.float32], str, Path]",
+    y_true: "Union[npt.NDArray[np.int32], str, Path]",
     min_overlap: float = 0.10,
     overlap_func: "Union[str, Callable[[npt.NDArray[np.float32], npt.NDArray[np.int32]], float]]" = 'IoU',
     case_confidence_func: "Union[str, Callable[[npt.NDArray[np.float32]], float]]" = 'max',
@@ -82,9 +82,9 @@ def evaluate_case(
     - case level confidence score derived from the detection map
     """
     y_list: List[Tuple[int, float, float]] = []
-    if isinstance(y_true, str):
+    if isinstance(y_true, (str, Path)):
         y_true = read_label(y_true)
-    if isinstance(y_det, str):
+    if isinstance(y_det, (str, Path)):
         y_det = read_prediction(y_det)
     if overlap_func == 'IoU':
         overlap_func = calculate_iou
