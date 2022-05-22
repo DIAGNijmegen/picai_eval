@@ -1,10 +1,12 @@
-import numpy as np
-from numpy.testing import assert_allclose
 from typing import List
-import pytest
 
-from picai_eval.statistical_helper import multiple_permutation_tests, perform_matched_boostrapping
-from picai_eval.statistical_helper import match_then_compare, match_reader, calc_sensitivity, calc_specificity
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose
+from picai_eval.statistical_helper import (calc_sensitivity, calc_specificity,
+                                           match_reader, match_then_compare,
+                                           multiple_permutation_tests,
+                                           perform_matched_boostrapping)
 
 
 def sample_predictions(n_pos=300, n_neg=700, kwargs_pos=None, kwargs_neg=None, seed=None):

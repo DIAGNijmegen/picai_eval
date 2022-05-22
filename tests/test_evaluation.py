@@ -1,17 +1,16 @@
 import os
 import sys
-import numpy as np
-from sklearn.metrics import roc_curve, auc
 from subprocess import check_call
 
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-
 from picai_eval import evaluate
-from picai_eval.eval import Metrics, evaluate_folder
-from picai_eval.image_utils import read_prediction, read_label, resize_image_with_crop_or_pad
 from picai_eval.data_utils import load_metrics
-
+from picai_eval.eval import Metrics, evaluate_folder
+from picai_eval.image_utils import (read_label, read_prediction,
+                                    resize_image_with_crop_or_pad)
+from sklearn.metrics import auc, roc_curve
 
 subject_list = [
     f"case-{i}"

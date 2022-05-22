@@ -12,20 +12,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from __future__ import division
-from __future__ import print_function
-from dataclasses import dataclass
-import numpy as np
-from pathlib import Path
-from sklearn.metrics import roc_curve, auc, precision_recall_curve
+from __future__ import division, print_function
 
-from typing import List, Tuple, Dict, Any, Union, Optional, Hashable
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, Hashable, List, Optional, Tuple, Union
+
+import numpy as np
+from sklearn.metrics import auc, precision_recall_curve, roc_curve
+
 try:
     import numpy.typing as npt
 except ImportError:  # pragma: no cover
     pass
 
-from picai_eval.data_utils import save_metrics, load_metrics, PathLike
+from picai_eval.data_utils import PathLike, load_metrics, save_metrics
 
 
 @dataclass
@@ -390,8 +391,8 @@ class Metrics:
             for idx, lesion_results_case in metrics['lesion_results'].items()
         }
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return f"Metrics(auroc={self.auroc:.2%}, AP={self.AP:.2%}, {self.num_cases} cases, {self.num_lesions} lesions)"
 
-    def __str__(self):
-        return str(self.as_dict())
+    def __repr__(self) -> str:
+        return self.__str__()

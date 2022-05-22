@@ -1,7 +1,7 @@
 import os
+
 import pytest
 from numpy.testing import assert_allclose
-
 from picai_eval.eval import evaluate_case
 
 

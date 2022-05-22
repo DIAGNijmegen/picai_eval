@@ -12,28 +12,28 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-import numpy as np
-from tqdm import tqdm
-from scipy import ndimage
 import concurrent.futures
+import itertools
+import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-import itertools
+from typing import (Callable, Dict, Hashable, Iterable, List, Optional, Sized,
+                    Tuple, Union)
 
-from typing import List, Tuple, Dict, Union, Optional, Callable, Iterable, Hashable, Sized
+import numpy as np
+from scipy import ndimage
+from tqdm import tqdm
+
 try:
     import numpy.typing as npt
 except ImportError:  # pragma: no cover
     pass
 
+from picai_eval.analysis_utils import (calculate_dsc, calculate_iou,
+                                       label_structure, parse_detection_map)
+from picai_eval.image_utils import (read_label, read_prediction,
+                                    resize_image_with_crop_or_pad)
 from picai_eval.metrics import Metrics
-from picai_eval.image_utils import (
-    resize_image_with_crop_or_pad, read_label, read_prediction
-)
-from picai_eval.analysis_utils import (
-    parse_detection_map, calculate_iou, calculate_dsc, label_structure
-)
 
 
 # Compute base prediction metrics TP/FP/FN with associated model confidences

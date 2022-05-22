@@ -13,11 +13,11 @@
 #  limitations under the License.
 
 import json
-import numpy as np
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any, TypeVar
+from typing import Any, Dict, Optional, TypeVar
 
+import numpy as np
 
 PathLike = TypeVar("PathLike", str, Path)
 

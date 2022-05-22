@@ -12,17 +12,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import numpy as np
-from tqdm import tqdm
-from typing import Dict, Union, Any, Optional, Hashable, List, Callable
+import concurrent.futures
 from collections.abc import Sequence
 from itertools import repeat
-
-from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix, cohen_kappa_score
-import concurrent.futures
 from multiprocessing import Pool
+from typing import Any, Callable, Dict, Hashable, List, Optional, Union
 
+import numpy as np
 from mlxtend.evaluate import permutation_test
+from sklearn.metrics import (cohen_kappa_score, confusion_matrix,
+                             roc_auc_score, roc_curve)
+from tqdm import tqdm
 
 try:
     from picai_eval.stat_util.stat_util import pvalue_stat

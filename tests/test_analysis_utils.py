@@ -1,8 +1,9 @@
 import json
+
 import numpy as np
 from numpy.testing import assert_allclose
-
-from picai_eval.analysis_utils import calculate_statistics, calculate_pAUC_from_graph
+from picai_eval.analysis_utils import (calculate_pAUC_from_graph,
+                                       calculate_statistics)
 
 
 def test_calculate_statistics():

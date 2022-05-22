@@ -13,8 +13,8 @@
 #  limitations under the License.
 
 import numpy as np
-from sklearn.metrics import auc
 from scipy import ndimage
+from sklearn.metrics import auc
 
 try:
     import numpy.typing as npt
