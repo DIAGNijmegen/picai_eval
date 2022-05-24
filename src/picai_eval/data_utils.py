@@ -51,6 +51,10 @@ def sterilize(obj):
         return {k: sterilize(v) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple, np.ndarray)):
         return [sterilize(v) for v in obj]
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.integer):
+        return int(obj)
     elif isinstance(obj, (str, int, bool, float)):
         return obj
     else:
