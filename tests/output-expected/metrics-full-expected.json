@@ -3,7 +3,7 @@
     "AP": 0.2777777777777778,
     "num_cases": 10,
     "num_lesions": 10,
-    "picai_eval_version": "1.3",
+    "picai_eval_version": "1.3.x",
     "lesion_results": {
         "case-0": [],
         "case-1": [
