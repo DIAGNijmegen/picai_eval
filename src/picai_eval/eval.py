@@ -334,7 +334,8 @@ def evaluate_folder(
     y_det_dir: Union[Path, str],
     y_true_dir: Optional[Union[Path, str]] = None,
     subject_list: Optional[List[str]] = None,
-    extensions: Optional[List[str]] = None,
+    pred_extensions: Optional[List[str]] = None,
+    label_extensions: Optional[List[str]] = None,
     detection_map_postfixes: Optional[List[str]] = None,
     label_postfixes: Optional[List[str]] = None,
     verbose: int = 1,
@@ -349,7 +350,8 @@ def evaluate_folder(
     - y_true_dir: (optional) path to folder containing the annotations. Defaults to y_true_dir.
     - subject_list: (optional) list of cases to evaluate. Allows to evaluate a subset of cases in a folder,
                     and ensures all specified cases were found.
-    - extensions: allowed file formats for detection maps and annotations.
+    - pred_extensions: allowed file extensions for detection maps.
+    - label_extensions: allowed file extensions for annotations.
     - detection_map_postfixes: allowed postifxes for detection maps.
     - label_postfixes: allowed postifxes for annotations.
     - verbose: (optional) controll amount of printed information.
@@ -360,8 +362,10 @@ def evaluate_folder(
     """
     if y_true_dir is None:
         y_true_dir = y_det_dir
-    if extensions is None:
-        extensions = [".npz", ".npy", ".nii.gz", ".nii", ".mha", ".mhd"]
+    if pred_extensions is None:
+        pred_extensions = [".npz", ".npy", ".nii.gz", ".nii", ".mha", ".mhd"]
+    if label_extensions is None:
+        label_extensions = [".nii.gz", ".nii", ".mha", ".mhd", ".npz", ".npy"]
     if detection_map_postfixes is None:
         detection_map_postfixes = ["_detection_map"]
         if y_true_dir != y_det_dir:
@@ -377,12 +381,12 @@ def evaluate_folder(
     detection_map_postfixes = [
         f"{postfix}{extension}"
         for postfix in detection_map_postfixes
-        for extension in extensions
+        for extension in pred_extensions
     ]
     label_postfixes = [
         f"{postfix}{extension}"
         for postfix in label_postfixes
-        for extension in extensions
+        for extension in label_extensions
     ]
 
     y_det = []
@@ -423,6 +427,10 @@ def evaluate_folder(
                 if postfix in fn:
                     y_det += [os.path.join(y_det_dir, fn)]
                     subject_id = fn.replace(postfix, "")
+                    if subject_id in subject_list:
+                        print(f"Found multiple detection maps for {subject_id}, skipping {fn}!")
+                        continue
+
                     subject_list += [subject_id]
                     break
 
