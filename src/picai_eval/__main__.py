@@ -20,18 +20,18 @@ from picai_eval import evaluate_folder
 
 # acquire and parse input and output paths
 parser = argparse.ArgumentParser(description='Command Line Arguments')
-parser.add_argument("--input", type=str, required=True,
+parser.add_argument("-i", "--input", type=str, required=True,
                     help="Path to folder with model predicitons (detection maps)")
-parser.add_argument("--labels", type=str, required=False,
+parser.add_argument("-l", "--labels", type=str, required=False,
                     help="Path to folder with labels (defaults to input folder if unspecified)")
-parser.add_argument("--output", type=str, default="metrics.json",
+parser.add_argument("-o", "--output", type=str, default="metrics.json",
                     help="Path to store metrics file, relative to the input folder.")
-parser.add_argument("--subject_list", type=str, required=False,
+parser.add_argument("-s", "--subject_list", type=str, required=False,
                     help="Path to subject list, relative to the input folder. The subject list " +
                          "may be stored as json list, or json dictionary with 'subject_list' as parameter.")
 args = parser.parse_args()
 
-if args.labels is not None:
+if args.labels is None:
     args.labels = args.input
 args.output = os.path.join(args.input, args.output)
 if args.subject_list is not None:
