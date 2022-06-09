@@ -448,5 +448,8 @@ def evaluate_folder(
         print(f"Found prediction and label for {len(y_det)} cases. Here are some examples:")
         print(subject_list[0:5])
 
+    # check if predictions were found
+    assert len(y_det), f"Did not find any predictions in {y_det_dir}!"
+
     # perform evaluation with compiled file lists
     return evaluate(y_det=y_det, y_true=y_true, subject_list=subject_list, verbose=verbose, **kwargs)

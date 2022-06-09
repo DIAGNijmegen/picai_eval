@@ -29,6 +29,9 @@ parser.add_argument("-o", "--output", type=str, default="metrics.json",
 parser.add_argument("-s", "--subject_list", type=str, required=False,
                     help="Path to subject list, relative to the input folder. The subject list " +
                          "may be stored as json list, or json dictionary with 'subject_list' as parameter.")
+parser.add_argument("-e", "--extensions", type=str, nargs="+", required=False,
+                    help="List of allowed file formats for detection maps and annotations." + 
+                         "Default: .npz, .npy, .nii.gz, .nii, .mha and .mhd")
 args = parser.parse_args()
 
 if args.labels is None:
@@ -56,6 +59,7 @@ metrics = evaluate_folder(
     y_det_dir=args.input,
     y_true_dir=args.labels,
     subject_list=args.subject_list,
+    extensions=args.extensions,
 )
 
 # show metrics
