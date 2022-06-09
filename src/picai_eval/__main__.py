@@ -29,10 +29,10 @@ parser.add_argument("-o", "--output", type=str, default="metrics.json",
 parser.add_argument("-s", "--subject_list", type=str, required=False,
                     help="Path to subject list, relative to the input folder. The subject list " +
                          "may be stored as json list, or json dictionary with 'subject_list' as parameter.")
-parser.add_argument("-e", "--pred_extensions", type=str, nargs="+", required=False,
+parser.add_argument("--pred_extensions", type=str, nargs="+", required=False,
                     help="List of allowed file formats for detection maps." + 
                          "Default: .npz, .npy, .nii.gz, .nii, .mha and .mhd")
-parser.add_argument("-e", "--label_extensions", type=str, nargs="+", required=False,
+parser.add_argument("--label_extensions", type=str, nargs="+", required=False,
                     help="List of allowed file formats for annotations." + 
                          "Default: .nii.gz, .nii, .mha, .mhd, .npz and .npy")
 args = parser.parse_args()
