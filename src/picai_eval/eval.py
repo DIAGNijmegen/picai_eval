@@ -14,6 +14,7 @@
 
 import concurrent.futures
 import itertools
+import json
 import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -34,6 +35,8 @@ from picai_eval.analysis_utils import (calculate_dsc, calculate_iou,
 from picai_eval.image_utils import (read_label, read_prediction,
                                     resize_image_with_crop_or_pad)
 from picai_eval.metrics import Metrics
+
+PathLike = Union[str, Path]
 
 
 # Compute base prediction metrics TP/FP/FN with associated model confidences
@@ -333,7 +336,7 @@ def evaluate(
 def evaluate_folder(
     y_det_dir: Union[Path, str],
     y_true_dir: Optional[Union[Path, str]] = None,
-    subject_list: Optional[List[str]] = None,
+    subject_list: Optional[Union[List[str], PathLike]] = None,
     pred_extensions: Optional[List[str]] = None,
     label_extensions: Optional[List[str]] = None,
     detection_map_postfixes: Optional[List[str]] = None,
@@ -349,7 +352,8 @@ def evaluate_folder(
     - y_det_dir: path to folder containing the detection maps.
     - y_true_dir: (optional) path to folder containing the annotations. Defaults to y_true_dir.
     - subject_list: (optional) list of cases to evaluate. Allows to evaluate a subset of cases in a folder,
-                    and ensures all specified cases were found.
+                    and ensures all specified cases were found. If str or Path, will load the subject list
+                    from the provided JSON file, which should contain a dictionary with "subject_list" entry.
     - pred_extensions: allowed file extensions for detection maps.
     - label_extensions: allowed file extensions for annotations.
     - detection_map_postfixes: allowed postifxes for detection maps.
@@ -376,6 +380,9 @@ def evaluate_folder(
         if y_true_dir != y_det_dir:
             # if annotation directory is specified, also look for [subject_id].nii.gz etc
             label_postfixes += [""]
+    if isinstance(subject_list, (str, Path)):
+        with open(subject_list) as fp:
+            subject_list = json.load(fp)["subject_list"]
 
     # combine postfixes and extensions in a single list
     detection_map_postfixes = [
