@@ -63,21 +63,21 @@ metrics = evaluate(
 
 Default parameters will perform evaluation as per the specifications of the [PI-CAI challenge](https://pi-cai.grand-challenge.org/). Optionally, the specifications for evaluation can be adapted using the following parameters:
 
-- `sample_weight`: Case-level sample weight. When this feature is used in conjunction with lesion-level evaluation, the same weight is applied to all lesion candidates of the same case. Lesion-wise sample weighting is currently not supported.
+- `sample_weight`: Case-level sample weight. When this feature is used in conjunction with lesion-level evaluation, the same weight is applied to all lesion candidates of the same case. Default: equal weight for all cases.
 
 - `subject_list`: List of sample identifiers, to give recognizable names to the evaluation results.
 
-- `min_overlap`: Defines the threshold of the hit criterion, i.e. the minimal required Intersection over Union (IoU) or Dice similarity coefficient (DSC) between predicted lesion candidates and ground-truth lesions, for predicted lesions to be counted as true positive detections. Default value: 0.1.
+- `min_overlap`: Defines the threshold of the hit criterion, i.e. the minimal required Intersection over Union (IoU) or Dice similarity coefficient (DSC) between predicted lesion candidates and ground-truth lesions, for predicted lesions to be counted as true positive detections. Default: 0.1.
 
-- `overlap_func`: Function used to calculate the basis of the hit criterion, i.e. the object overlap between predicted lesion candidates and ground-truth lesions. This can be set as 'IoU' to use Intersection over Union, or 'DSC' to use Dice similarity coefficient. Alternatively, any other function can also be provided with the signature `func(detection_map, annotation) -> overlap [0, 1]`. Default value: 'IoU'.
+- `overlap_func`: Function used to calculate the basis of the hit criterion, i.e. the object overlap between predicted lesion candidates and ground-truth lesions. This can be set as 'IoU' to use Intersection over Union, or 'DSC' to use Dice similarity coefficient. Alternatively, any other function can also be provided with the signature `func(detection_map, annotation) -> overlap [0, 1]`. Default: 'IoU'.
 
-- `case_confidence`: Function used to derive case-level prediction or confidence, from lesion-level detections or confidences (as denoted by 'f(x)' in ['Evaluation Pipeline'](#evaluation-pipeline). Default value: 'max' (which simply takes the maximum of the detection map, as the case-level prediction).
+- `case_confidence_func`: Function used to derive case-level prediction or confidence, from lesion-level detections or confidences (as denoted by 'f(x)' in ['Evaluation Pipeline'](#evaluation-pipeline). Default: 'max' (which simply takes the maximum of the detection map, as the case-level prediction).
 
-- `multiple_lesion_candidates_selection_criteria`: Used to account for [split-merge scenarios](https://www.nature.com/articles/s41598-020-64803-w/figures/1). When multiple lesion candidates have sufficient overlap with the ground-truth lesion, this condition determines which lesion candidate is selected as the true positive, and which lesion candidates are discarded or counted as false positives. Default value: 'overlap' (which selects the lesion candidate with the highest degree of overlap).
+- `multiple_lesion_candidates_selection_criteria`: Used to account for [split-merge scenarios](https://www.nature.com/articles/s41598-020-64803-w/figures/1). When multiple lesion candidates have sufficient overlap with the ground-truth lesion, this condition determines which lesion candidate is selected as the true positive, and which lesion candidates are discarded or counted as false positives. Default: 'overlap' (which selects the lesion candidate with the highest degree of overlap).
 
-- `allow_unmatched_candidates_with_minimal_overlap`: Used to account for [split-merge scenarios](https://www.nature.com/articles/s41598-020-64803-w/figures/1). When multiple lesion candidates have sufficient overlap with the ground-truth lesion, this condition determines whether non-selected lesion candidates are discarded or count as false positives. Default value: False (i.e. non-selected lesion candidates are not counted as false positives).
+- `allow_unmatched_candidates_with_minimal_overlap`: Used to account for [split-merge scenarios](https://www.nature.com/articles/s41598-020-64803-w/figures/1). When multiple lesion candidates have sufficient overlap with the ground-truth lesion, this condition determines whether non-selected lesion candidates are discarded or count as false positives. Default: True (i.e. non-selected lesion candidates are not counted as false positives).
 
-- `num_parallel_calls`: Number of CPU threads used to process evaluation. Default value: 8.
+- `num_parallel_calls`: Number of CPU threads used to process evaluation. Default: 3.
 
 #
 
