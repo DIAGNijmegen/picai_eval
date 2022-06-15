@@ -63,7 +63,7 @@ if __name__ == '__main__':
         long_description = fh.read()
 
     setuptools.setup(
-        version='1.3.7',  # also update version in metrics.py -> version
+        version='1.4.0',  # also update version in metrics.py -> version
         author_email='Joeran.Bosma@radboudumc.nl',
         long_description=long_description,
         long_description_content_type="text/markdown",

@@ -55,6 +55,9 @@ def evaluate_case(
     """
     Gather the list of lesion candidates, and classify in TP/FP/FN.
 
+    Lesion candidates are matched to ground truth lesions, by maximizing the number of candidates
+    with sufficient overlap (i.e., matches), and secondly by maximizing the total overlap of all candidates.
+
     Parameters:
     - y_det: Detection map, which should be a 3D volume containing connected components (in 3D) of the
         same confidence. Each detection map may contain an arbitrary number of connected components,
@@ -141,7 +144,8 @@ def evaluate_case(
                 # store overlap
                 overlap_matrix[lesion_id, lesion_candidate_id] = overlap_score
 
-        # match lesion candidates to ground truth lesion
+        # match lesion candidates to ground truth lesion (for documentation on how this works, please see
+        # https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.optimize.linear_sum_assignment.html)
         overlap_matrix[overlap_matrix < min_overlap] = 0  # don't match lesions with insufficient overlap
         overlap_matrix[overlap_matrix > 0] += 1  # prioritize matching over the amount of overlap
         matched_lesion_indices, matched_lesion_candidate_indices = linear_sum_assignment(overlap_matrix, maximize=True)

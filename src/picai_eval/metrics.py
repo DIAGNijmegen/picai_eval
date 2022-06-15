@@ -305,7 +305,7 @@ class Metrics:
 
     @property
     def version(self):
-        return "1.3.x"
+        return "1.4.x"
 
     def as_dict(self):
         return {
