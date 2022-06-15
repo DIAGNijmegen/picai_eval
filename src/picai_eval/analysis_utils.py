@@ -30,7 +30,7 @@ label_structure = np.ones((3, 3, 3))
 # parse detection maps to individual lesions + confidences
 def parse_detection_map(
     y_det: "npt.NDArray[np.float32]"
-) -> Tuple[Dict[int, float], npt.NDArray[np.int32]]:
+) -> "Tuple[Dict[int, float], npt.NDArray[np.int32]]":
     """Extract confidence scores per lesion candidate"""
     # label all non-connected components in the detection map
     blobs_index, num_blobs = ndimage.label(y_det, structure=label_structure)
