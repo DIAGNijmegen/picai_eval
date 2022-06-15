@@ -23,6 +23,7 @@ from typing import (Callable, Dict, Hashable, Iterable, List, Optional, Sized,
 
 import numpy as np
 from scipy import ndimage
+from scipy.optimize import linear_sum_assignment
 from tqdm import tqdm
 
 try:
@@ -115,95 +116,71 @@ def evaluate_case(
 
     # perform connected-components analysis on detection maps
     confidences, indexed_pred = parse_detection_map(y_det)
+    lesion_candidate_ids = np.arange(len(confidences))
 
-    lesion_candidates_best_overlap: Dict[str, float] = {}
-
-    if y_true.any():
-        # for each malignant scan
-        labeled_gt, num_gt_lesions = ndimage.label(y_true, structure=label_structure)
-
-        for lesion_id in range(1, num_gt_lesions+1):
-            # for each lesion in ground-truth (GT) label
-            gt_lesion_mask = (labeled_gt == lesion_id)
-
-            if overlap_func in [calculate_iou, calculate_dsc]:
-                # collect indices of lesion candidates that have any overlap with the current GT lesion
-                overlapping_lesion_candidate_indices = set(np.unique(indexed_pred[gt_lesion_mask]))
-            else:
-                # we do not know which overlap function is employed, so can't speed up with above method
-                overlapping_lesion_candidate_indices = set(np.unique(indexed_pred))
-            overlapping_lesion_candidate_indices -= {0}  # remove index 0, if present
-
-            # collect lesion candidates for current GT lesion
-            lesion_candidates_for_target_gt: List[Dict[str, Union[int, float]]] = []
-            for lesion_candidate_id, lesion_confidence in confidences:
-                if lesion_candidate_id in overlapping_lesion_candidate_indices:
-                    # calculate overlap between lesion candidate and GT mask
-                    lesion_pred_mask = (indexed_pred == lesion_candidate_id)
-                    overlap_score = overlap_func(lesion_pred_mask, gt_lesion_mask)
-
-                    # keep track of the highest overlap a lesion candidate has with any GT lesion
-                    lesion_candidates_best_overlap[lesion_candidate_id] = max(
-                        overlap_score, lesion_candidates_best_overlap.get(lesion_candidate_id, 0)
-                    )
-
-                    # store lesion candidate info for current GT mask
-                    lesion_candidates_for_target_gt.append({
-                        'id': lesion_candidate_id,
-                        'confidence': lesion_confidence,
-                        'overlap': overlap_score,
-                    })
-
-            if len(lesion_candidates_for_target_gt) == 0:
-                # no lesion candidate matched with GT mask. Add FN.
-                y_list.append((1, 0., 0.))
-            else:
-                # multiple predictions for current GT lesion
-                # sort lesion candidates based on overlap or confidence
-                key = multiple_lesion_candidates_selection_criteria
-                lesion_candidates_for_target_gt = sorted(lesion_candidates_for_target_gt, key=lambda x: x[key], reverse=True)
-
-                gt_lesion_matched = False
-                for candidate_info in lesion_candidates_for_target_gt:
-                    lesion_pred_mask = (indexed_pred == candidate_info['id'])
-
-                    if candidate_info['overlap'] > min_overlap:
-                        indexed_pred[lesion_pred_mask] = 0
-                        y_list.append((1, candidate_info['confidence'], candidate_info['overlap']))
-                        gt_lesion_matched = True
-                        break
-
-                if not gt_lesion_matched:
-                    # ground truth lesion not matched to a lesion candidate. Add FN.
-                    y_list.append((1, 0., 0.))
-
-        # Remaining lesions are FPs
-        remaining_lesions = set(np.unique(indexed_pred))
-        remaining_lesions -= {0}  # remove index 0, if present
-        for lesion_candidate_id, lesion_confidence in confidences:
-            if lesion_candidate_id in remaining_lesions:
-                overlap_score = lesion_candidates_best_overlap.get(lesion_candidate_id, 0)
-                if allow_unmatched_candidates_with_minimal_overlap and overlap_score > min_overlap:
-                    # The lesion candidate was not matched to a GT lesion, but did have overlap > min_overlap
-                    # with a GT lesion. The GT lesion is, however, matched to another lesion candidate.
-                    # In this operation mode, this lesion candidate is not considered as a false positive.
-                    pass
-                else:
-                    y_list.append((0, lesion_confidence, 0.))  # add FP
-
-    else:
-        # for benign case, all predictions are FPs
-        for _, lesion_confidence in confidences:
+    if not y_true.any():
+        # benign case, all predictions are FPs
+        for lesion_confidence in confidences.values():
             y_list.append((0, lesion_confidence, 0.))
+    else:
+        # malignant case, collect overlap between each prediction and ground truth lesion
+        labeled_gt, num_gt_lesions = ndimage.label(y_true, structure=label_structure)
+        gt_lesion_ids = np.arange(num_gt_lesions)
+        overlap_matrix = np.zeros((num_gt_lesions, len(confidences)))
+
+        for lesion_id in gt_lesion_ids:
+            # for each lesion in ground-truth (GT) label
+            gt_lesion_mask = (labeled_gt == (1+lesion_id))
+
+            # calculate overlap between each lesion candidate and the current GT lesion
+            for lesion_candidate_id in lesion_candidate_ids:
+                # calculate overlap between lesion candidate and GT mask
+                lesion_pred_mask = (indexed_pred == (1+lesion_candidate_id))
+                overlap_score = overlap_func(lesion_pred_mask, gt_lesion_mask)
+
+                # store overlap
+                overlap_matrix[lesion_id, lesion_candidate_id] = overlap_score
+
+        # match lesion candidates to ground truth lesion
+        overlap_matrix[overlap_matrix < min_overlap] = 0  # don't match lesions with insufficient overlap
+        overlap_matrix[overlap_matrix > 0] += 1  # prioritize matching over the amount of overlap
+        matched_lesion_indices, matched_lesion_candidate_indices = linear_sum_assignment(overlap_matrix, maximize=True)
+
+        # remove indices where overlap is zero
+        mask = (overlap_matrix[matched_lesion_indices, matched_lesion_candidate_indices] > 0)
+        matched_lesion_indices = matched_lesion_indices[mask]
+        matched_lesion_candidate_indices = matched_lesion_candidate_indices[mask]
+
+        # all lesion candidates that are matched are TPs
+        for lesion_id, lesion_candidate_id in zip(matched_lesion_indices, matched_lesion_candidate_indices):
+            lesion_confidence = confidences[lesion_candidate_id]
+            overlap = overlap_matrix[lesion_id, lesion_candidate_id]
+            overlap -= 1  # return overlap to [0, 1]
+
+            assert overlap > min_overlap, "Overlap must be greater than min_overlap!"
+
+            y_list.append((1, lesion_confidence, overlap))
+
+        # all ground truth lesions that are not matched are FNs
+        unmatched_gt_lesions = set(gt_lesion_ids) - set(matched_lesion_indices)
+        y_list += [(1, 0., 0.) for _ in unmatched_gt_lesions]
+
+        # all lesion candidates with insufficient overlap/not matched to a gt lesion are FPs
+        if allow_unmatched_candidates_with_minimal_overlap:
+            candidates_sufficient_overlap = lesion_candidate_ids[(overlap_matrix > 0).any(axis=0)]
+            unmatched_candidates = set(lesion_candidate_ids) - set(candidates_sufficient_overlap)
+        else:
+            unmatched_candidates = set(lesion_candidate_ids) - set(matched_lesion_candidate_indices)
+        y_list += [(0, confidences[lesion_candidate_id], 0.) for lesion_candidate_id in unmatched_candidates]
 
     # determine case-level confidence score
     if case_confidence_func == 'max':
         # take highest lesion confidence as case-level confidence
         case_confidence = np.max(y_det)
     elif case_confidence_func == 'bayesian':
-        # if a_i is the probability the i-th lesion is csPCa, then the case-level
-        # probability to have one or multiple csPCa lesion is 1 - Π_i{ 1 - a_i}
-        case_confidence = 1 - np.prod([(1 - a[1]) for a in confidences])
+        # if c_i is the probability the i-th lesion is csPCa, then the case-level
+        # probability to have one or multiple csPCa lesion is 1 - Π_i{ 1 - c_i}
+        case_confidence = 1 - np.prod([(1 - c) for c in confidences.values()])
     else:
         # apply user-defines case-level confidence score function
         case_confidence = case_confidence_func(y_det)
