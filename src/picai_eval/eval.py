@@ -285,9 +285,16 @@ def evaluate(
             if isinstance(subject_list, Sized):
                 total = len(subject_list)
             iterator = tqdm(iterator, desc='Evaluating', total=total)
+
         for future in iterator:
-            # unpack results
-            lesion_results_case, case_confidence = future.result()
+            idx, weight = future_to_args[future]
+
+            try:
+                # unpack results
+                lesion_results_case, case_confidence = future.result()
+            except Exception as e:
+                print(f'Error for {idx}: {e}')
+                raise e
 
             # aggregate results
             idx, weight = future_to_args[future]
