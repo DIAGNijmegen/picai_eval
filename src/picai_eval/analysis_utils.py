@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from typing import Dict, Tuple
+
 import numpy as np
 from scipy import ndimage
 from sklearn.metrics import auc
@@ -26,22 +28,27 @@ label_structure = np.ones((3, 3, 3))
 
 
 # parse detection maps to individual lesions + confidences
-def parse_detection_map(y_det: "npt.NDArray[np.float32]"):
+def parse_detection_map(
+    y_det: "npt.NDArray[np.float32]"
+) -> "Tuple[Dict[int, float], npt.NDArray[np.int32]]":
     """Extract confidence scores per lesion candidate"""
     # label all non-connected components in the detection map
     blobs_index, num_blobs = ndimage.label(y_det, structure=label_structure)
 
     # input verification
-    assert num_blobs >= len(set(np.unique(y_det))-{0}), (
-        "It looks like the provided detection map is a softmax volume. If this is indeed the case, convert "
-        "the softmax volumes to detection maps. Check the documentation how to incorporate this: "
-        "https://github.com/DIAGNijmegen/picai_eval/."
-    )
-    confidences = []
-    for tumor_index in range(1, num_blobs+1):
-        # store predicted confidence per lesion detection
-        max_prob = y_det[blobs_index == tumor_index].max()
-        confidences.append((tumor_index, max_prob))
+    if num_blobs < len(set(np.unique(y_det))-{0}):
+        raise ValueError(
+            "It looks like the provided detection map is a softmax volume. If this is indeed the case, convert "
+            "the softmax volumes to detection maps. Check the documentation how to incorporate this: "
+            "https://github.com/DIAGNijmegen/picai_eval/."
+        )
+
+    # extract confidence per lesion candidate
+    confidences = {}
+    for lesion_candidate_id in range(num_blobs):
+        max_prob = y_det[blobs_index == (1+lesion_candidate_id)].max()
+        confidences[lesion_candidate_id] = float(max_prob)
+
     return confidences, blobs_index
 
 
