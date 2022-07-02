@@ -4,4 +4,4 @@ SimpleITK
 scipy
 scikit-learn>=0.20.3
 mlxtend
-git+https://github.com/DIAGNijmegen/Report-Guided-Annotation
+report_guided_annotation>=0.2.4

@@ -19,7 +19,7 @@ This repository contains standardized functions to evaluate 3D detection and dia
 ## Installation
 `picai_eval` is pip-installable:
 
-`pip install git+https://github.com/DIAGNijmegen/picai_eval`
+`pip install picai_eval`
 
 ## Evaluation Pipeline
 ![Detection pipeline overview](detection-pipeline.png)
