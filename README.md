@@ -38,7 +38,7 @@ Note, we define a _connected component_ as all non-zero voxels with _squared con
 
 #
 
-### Evaluate Individual Detection Maps with Python
+### Evaluate Detection Maps with Python
 To run evaluation scripts from Python, import the `evaluate` function and provide detection maps (`y_det`) and annotations (`y_true`):
 
 ```python
@@ -81,7 +81,7 @@ Default parameters will perform evaluation as per the specifications of the [PI-
 
 #
 
-### Evaluate All Detection Maps stored in a Specific Folder
+### Evaluate all Detection Maps stored in a specific folder
 To evaluate numerous detection maps stored on disk, prepare input folders in the following format:
 
 ```
@@ -118,7 +118,7 @@ metrics = evaluate_folder(
 )
 ```
 
-**Using the Command Line:**  
+**Using the command line:**  
 Evaluates all cases found in `path/to/detection_maps` against the annotations in `path/to/annotations`, and store the metrics in `path/to/detection_maps/metrics.json`. Optionally, the `--labels` parameter may be omitted, which will then default to the `--input` folder. To specify the output location of the metrics, use `--output /path/to/metrics.json`.
 
 ```bash
@@ -130,7 +130,7 @@ python -m picai_eval --input path/to/detection_maps --labels path/to/annotations
 ### Evaluate Softmax Volumes (instead of Detection Maps)
 To evaluate softmax predictions (instead of detection maps), a function to extract lesion candidates from the softmax volume must be provided. For instance, the dynamic lesion extraction method from the [`report_guided_annotation`](https://github.com/DIAGNijmegen/Report-Guided-Annotation) module can be used for this (see [mechanism](https://github.com/DIAGNijmegen/Report-Guided-Annotation#mechanism) for a depiction of its working principle).
 
-**Evaluating Individual Softmax Volumes using Python:**
+**Evaluating Softmax Volumes using Python:**
 ```python
 from picai_eval import evaluate
 from report_guided_annotation import extract_lesion_candidates
@@ -143,7 +143,9 @@ metrics = evaluate(
 )
 ```
 
-**Evaluating All Softmax Volumes stored in a Specific Folder:**
+For the structure of the inputs and additional parameters, see [Evaluate Detection Maps with Python](#evaluate-detection-maps-with-python).
+
+**Evaluating all Softmax Volumes stored in a specific folder:**
 ```python
 from picai_eval import evaluate_folder
 from report_guided_annotation import extract_lesion_candidates
