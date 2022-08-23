@@ -269,12 +269,12 @@ Permutation test can be used as follows:
 ```python
 from picai_eval.statistical_helper import perform_permutation_test
 
-scores_algorithm_a = [0.92, 0.94, 0.95, 0.81, 0.82, 0.86]
-scores_algorithm_b = [0.96, 0.91, 0.90, 0.85, 0.81, 0.80]
+scores_algorithm_a = [0.96, 0.91, 0.90, 0.85, 0.81, 0.80]
+scores_algorithm_b = [0.92, 0.94, 0.95, 0.81, 0.82, 0.86]
 
-# perform multiple permutation tests
+# perform permutation tests
 p = perform_permutation_test(
-    scores_alternative=metrics_algorithm_a,
+    scores_alternative=scores_algorithm_a,
     scores_baseline=scores_algorithm_b,
 )
 
