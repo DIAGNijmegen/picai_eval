@@ -52,8 +52,8 @@ if args.subject_list is not None:
         args.subject_list = args.subject_list['subject_list']
 
 if args.y_det_postprocess_func is not None:
-    if args.y_det_prostprocess_func == "extract_lesion_candidates":
-        args.y_det_prostprocess_func = lambda pred: extract_lesion_candidates(pred)[0]
+    if args.y_det_postprocess_func == "extract_lesion_candidates":
+        args.y_det_postprocess_func = lambda pred: extract_lesion_candidates(pred)[0]
     else:
         raise ValueError(f"Received unsupported post-processing function: {args.y_det_postprocess_func}")
 
