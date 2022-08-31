@@ -47,7 +47,6 @@ def evaluate_case(
     min_overlap: float = 0.10,
     overlap_func: "Union[str, Callable[[npt.NDArray[np.float32], npt.NDArray[np.int32]], float]]" = 'IoU',
     case_confidence_func: "Union[str, Callable[[npt.NDArray[np.float32]], float]]" = 'max',
-    multiple_lesion_candidates_selection_criteria: str = 'overlap',
     allow_unmatched_candidates_with_minimal_overlap: bool = True,
     y_det_postprocess_func: "Optional[Callable[[npt.NDArray[np.float32]], npt.NDArray[np.float32]]]" = None,
     y_true_postprocess_func: "Optional[Callable[[npt.NDArray[np.int32]], npt.NDArray[np.int32]]]" = None,
@@ -73,8 +72,6 @@ def evaluate_case(
     - overlap_func: function to calculate overlap between a lesion candidate and ground truth mask.
         May be 'IoU' for Intersection over Union, or 'DSC' for Dice similarity coefficient. Alternatively,
         provide a function with signature `func(detection_map, annotation) -> overlap [0, 1]`.
-    - multiple_lesion_candidates_selection_criteria: when multiple lesion candidates have sufficient
-        overlap with the ground truth lesion mask, this determines which lesion candidate is selected as TP.
     - allow_unmatched_candidates_with_minimal_overlap: when multiple lesion candidates have sufficient
         overlap with the ground truth lesion mask, this determines whether the lesion that is not selected
         counts as a false positive.
@@ -201,7 +198,6 @@ def evaluate(
     min_overlap: float = 0.10,
     overlap_func: "Union[str, Callable[[npt.NDArray[np.float32], npt.NDArray[np.int32]], float]]" = 'IoU',
     case_confidence_func: "Union[str, Callable[[npt.NDArray[np.float32]], float]]" = 'max',
-    multiple_lesion_candidates_selection_criteria: str = 'overlap',
     allow_unmatched_candidates_with_minimal_overlap: bool = True,
     y_det_postprocess_func: "Optional[Callable[[npt.NDArray[np.float32]], npt.NDArray[np.float32]]]" = None,
     y_true_postprocess_func: "Optional[Callable[[npt.NDArray[np.int32]], npt.NDArray[np.int32]]]" = None,
@@ -231,8 +227,6 @@ def evaluate(
         May be 'IoU' for Intersection over Union, or 'DSC' for Dice similarity coefficient. Alternatively,
         provide a function with signature `func(detection_map, annotation) -> overlap [0, 1]`.
     - case_confidence_func: function to derive case-level confidence from detection map. Default: max.
-    - multiple_lesion_candidates_selection_criteria: when multiple lesion candidates have sufficient
-        overlap with the ground truth lesion mask, this determines which lesion candidate is selected as TP.
     - allow_unmatched_candidates_with_minimal_overlap: when multiple lesion candidates have sufficient
         overlap with the ground truth lesion mask, this determines whether the lesion that is not selected
         counts as a false positive.
@@ -270,7 +264,6 @@ def evaluate(
                 min_overlap=min_overlap,
                 overlap_func=overlap_func,
                 case_confidence_func=case_confidence_func,
-                multiple_lesion_candidates_selection_criteria=multiple_lesion_candidates_selection_criteria,
                 allow_unmatched_candidates_with_minimal_overlap=allow_unmatched_candidates_with_minimal_overlap,
                 y_det_postprocess_func=y_det_postprocess_func,
                 y_true_postprocess_func=y_true_postprocess_func
