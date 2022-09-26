@@ -51,14 +51,14 @@ class Metrics:
         if self.case_target is None:
             # derive case-level targets as the maximum lesion-level target
             self.case_target = {
-                idx: max([is_lesion for is_lesion, _, _ in case_y_list])
+                idx: max([is_lesion for is_lesion, _, _ in case_y_list]) if len(case_y_list) else 0
                 for idx, case_y_list in self.lesion_results.items()
             }
 
         if self.case_pred is None:
             # derive case-level predictions as the maximum lesion-level prediction
             self.case_pred = {
-                idx: max([confidence for _, confidence, _ in case_y_list])
+                idx: max([confidence for _, confidence, _ in case_y_list]) if len(case_y_list) else 0
                 for idx, case_y_list in self.lesion_results.items()
             }
 
