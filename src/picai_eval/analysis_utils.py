@@ -38,9 +38,10 @@ def parse_detection_map(
     # input verification
     if num_blobs < len(set(np.unique(y_det))-{0}):
         raise ValueError(
-            "It looks like the provided detection map is a softmax volume. If this is indeed the case, convert "
-            "the softmax volumes to detection maps. Check the documentation how to incorporate this: "
-            "https://github.com/DIAGNijmegen/picai_eval/."
+            "It looks like you provided your predictions as softmax volumes instead of detection maps. "
+            "If this is the case, please convert your softmax volumes to detection maps (e.g. via postprocessing). "
+            "Visit https://github.com/DIAGNijmegen/picai_eval/ for documentation on what we expect of `detection maps` "
+            "and how they can be generated from softmax predictions."
         )
 
     # extract confidence per lesion candidate
