@@ -16,6 +16,8 @@ import argparse
 import json
 import os
 
+from report_guided_annotation import extract_lesion_candidates
+
 from picai_eval import evaluate_folder
 
 # acquire and parse input and output paths
@@ -35,6 +37,10 @@ parser.add_argument("--pred_extensions", type=str, nargs="+", required=False,
 parser.add_argument("--label_extensions", type=str, nargs="+", required=False,
                     help="List of allowed file formats for annotations." +
                          "Default: .nii.gz, .nii, .mha, .mhd, .npz and .npy")
+parser.add_argument("--y_det_postprocess_func", type=str, required=False,
+                    help="Post-processing function for detection maps. Available: `extract_lesion_candidates`")
+parser.add_argument("--y_det_postprocess_kwargs", type=str, required=False,
+                    help='Post-processing arguments for detection maps. E.g.: `{"threshold": "dynamic"}`')
 args = parser.parse_args()
 
 if args.labels is None:
@@ -46,6 +52,16 @@ if args.subject_list is not None:
         args.subject_list = json.load(fp)
     if isinstance(args.subject_list, dict):
         args.subject_list = args.subject_list['subject_list']
+
+if args.y_det_postprocess_func is not None:
+    if args.y_det_postprocess_func == "extract_lesion_candidates":
+        if args.y_det_postprocess_kwargs is None:
+            args.y_det_postprocess_kwargs = {}
+        else:
+            args.y_det_postprocess_kwargs = json.loads(args.y_det_postprocess_kwargs)
+        args.y_det_postprocess_func = lambda pred: extract_lesion_candidates(pred, **args.y_det_postprocess_kwargs)[0]
+    else:
+        raise ValueError(f"Received unsupported post-processing function: {args.y_det_postprocess_func}")
 
 print(f"""
     PICAI Evaluation
@@ -64,6 +80,7 @@ metrics = evaluate_folder(
     subject_list=args.subject_list,
     pred_extensions=args.pred_extensions,
     label_extensions=args.label_extensions,
+    y_det_postprocess_func=args.y_det_postprocess_func,
 )
 
 # show metrics
