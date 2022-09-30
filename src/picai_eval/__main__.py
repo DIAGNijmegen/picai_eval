@@ -57,6 +57,8 @@ if args.y_det_postprocess_func is not None:
     if args.y_det_postprocess_func == "extract_lesion_candidates":
         if args.y_det_postprocess_kwargs is None:
             args.y_det_postprocess_kwargs = {}
+        else:
+            args.y_det_postprocess_kwargs = json.loads(args.y_det_postprocess_kwargs)
         args.y_det_postprocess_func = lambda pred: extract_lesion_candidates(pred, **args.y_det_postprocess_kwargs)[0]
     else:
         raise ValueError(f"Received unsupported post-processing function: {args.y_det_postprocess_func}")
