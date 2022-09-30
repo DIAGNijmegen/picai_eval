@@ -40,7 +40,7 @@ parser.add_argument("--label_extensions", type=str, nargs="+", required=False,
 parser.add_argument("--y_det_postprocess_func", type=str, required=False,
                     help="Post-processing function for detection maps. Available: `extract_lesion_candidates`")
 parser.add_argument("--y_det_postprocess_kwargs", type=str, required=False,
-                    help="Post-processing arguments for detection maps. E.g.: `{'threshold': 'dynamic'}`")
+                    help='Post-processing arguments for detection maps. E.g.: `{"threshold": "dynamic"}`')
 args = parser.parse_args()
 
 if args.labels is None:
