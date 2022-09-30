@@ -39,6 +39,8 @@ parser.add_argument("--label_extensions", type=str, nargs="+", required=False,
                          "Default: .nii.gz, .nii, .mha, .mhd, .npz and .npy")
 parser.add_argument("--y_det_postprocess_func", type=str, required=False,
                     help="Post-processing function for detection maps. Available: `extract_lesion_candidates`")
+parser.add_argument("--y_det_postprocess_kwargs", type=str, required=False,
+                    help="Post-processing arguments for detection maps. E.g.: `{'threshold': 'dynamic'}`")
 args = parser.parse_args()
 
 if args.labels is None:
@@ -53,7 +55,9 @@ if args.subject_list is not None:
 
 if args.y_det_postprocess_func is not None:
     if args.y_det_postprocess_func == "extract_lesion_candidates":
-        args.y_det_postprocess_func = lambda pred: extract_lesion_candidates(pred)[0]
+        if args.y_det_postprocess_kwargs is None:
+            args.y_det_postprocess_kwargs = {}
+        args.y_det_postprocess_func = lambda pred: extract_lesion_candidates(pred, **args.y_det_postprocess_kwargs)[0]
     else:
         raise ValueError(f"Received unsupported post-processing function: {args.y_det_postprocess_func}")
 
