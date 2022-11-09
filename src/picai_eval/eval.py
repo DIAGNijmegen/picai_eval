@@ -50,6 +50,8 @@ def evaluate_case(
     allow_unmatched_candidates_with_minimal_overlap: bool = True,
     y_det_postprocess_func: "Optional[Callable[[npt.NDArray[np.float32]], npt.NDArray[np.float32]]]" = None,
     y_true_postprocess_func: "Optional[Callable[[npt.NDArray[np.int32]], npt.NDArray[np.int32]]]" = None,
+    weight: Optional[float] = None,
+    idx: Optional[str] = None,
 ) -> Tuple[List[Tuple[int, float, float]], float]:
     """
     Gather the list of lesion candidates, and classify in TP/FP/FN.
@@ -186,7 +188,46 @@ def evaluate_case(
         # apply user-defines case-level confidence score function
         case_confidence = case_confidence_func(y_det)
 
-    return y_list, case_confidence
+    return y_list, case_confidence, weight, idx
+
+
+def make_evaluation_iterator(
+    y_det: "Iterable[Union[npt.NDArray[np.float64], str, Path]]",
+    y_true: "Iterable[Union[npt.NDArray[np.float64], str, Path]]",
+    sample_weight: "Optional[Iterable[float]]" = None,
+    subject_list: Optional[Iterable[Hashable]] = None,
+    num_threads: int = 3,
+    **kwargs
+):
+    if num_threads >= 2:
+        # process the cases in parallel
+        with ThreadPoolExecutor(max_workers=num_threads) as pool:
+            futures = {
+                pool.submit(
+                    evaluate_case,
+                    y_det=y_det_case,
+                    y_true=y_true_case,
+                    weight=weight,
+                    idx=idx,
+                    **kwargs
+                ): idx
+                for (y_det_case, y_true_case, weight, idx) in zip(y_det, y_true, sample_weight, subject_list)
+            }
+
+            iterator = concurrent.futures.as_completed(futures)
+    else:
+        def func(y_det_case, y_true_case, weight, idx):
+            return evaluate_case(
+                y_det=y_det_case,
+                y_true=y_true_case,
+                weight=weight,
+                idx=idx,
+                **kwargs
+            )
+
+        iterator = map(func, y_det, y_true, sample_weight, subject_list)
+    
+    return iterator
 
 
 # Evaluate all cases
@@ -253,54 +294,47 @@ def evaluate(
     lesion_results: Dict[Hashable, List[Tuple[int, float, float]]] = {}
     lesion_weight: Dict[Hashable, List[float]] = {}
 
-    with ThreadPoolExecutor(max_workers=num_parallel_calls) as pool:
-        # define the functions that need to be processed: compute_pred_vector, with each individual
-        # detection_map prediction, ground truth label and parameters
-        future_to_args = {
-            pool.submit(
-                evaluate_case,
-                y_det=y_det_case,
-                y_true=y_true_case,
-                min_overlap=min_overlap,
-                overlap_func=overlap_func,
-                case_confidence_func=case_confidence_func,
-                allow_unmatched_candidates_with_minimal_overlap=allow_unmatched_candidates_with_minimal_overlap,
-                y_det_postprocess_func=y_det_postprocess_func,
-                y_true_postprocess_func=y_true_postprocess_func
-            ): (idx, weight)
-            for (y_det_case, y_true_case, weight, idx) in zip(y_det, y_true, sample_weight, subject_list)
-        }
+    iterator = make_evaluation_iterator(
+        y_det=y_det,
+        y_true=y_true,
+        sample_weight=sample_weight,
+        subject_list=subject_list,
+        num_threads=num_parallel_calls,
+        min_overlap=min_overlap,
+        overlap_func=overlap_func,
+        case_confidence_func=case_confidence_func,
+        allow_unmatched_candidates_with_minimal_overlap=allow_unmatched_candidates_with_minimal_overlap,
+        y_det_postprocess_func=y_det_postprocess_func,
+        y_true_postprocess_func=y_true_postprocess_func
+    )
 
-        # process the cases in parallel
-        iterator = concurrent.futures.as_completed(future_to_args)
-        if verbose:
-            total: Optional[int] = None
-            if isinstance(subject_list, Sized):
-                total = len(subject_list)
-            iterator = tqdm(iterator, desc='Evaluating', total=total)
+    if verbose:
+        total: Optional[int] = None
+        if isinstance(subject_list, Sized):
+            total = len(subject_list)
+        iterator = tqdm(iterator, desc='Evaluating', total=total)
 
-        for future in iterator:
-            idx, weight = future_to_args[future]
+    for result in iterator:
+        if isinstance(result, tuple):
+            # single-threaded evaluation
+            lesion_results_case, case_confidence, weight, idx = result
+        elif isinstance(result, concurrent.futures.Future):
+            # multi-threaded evaluation
+            lesion_results_case, case_confidence, weight, idx = result.result()
+        else:
+            raise TypeError(f'Unexpected result type: {type(result)}')
 
-            try:
-                # unpack results
-                lesion_results_case, case_confidence = future.result()
-            except Exception as e:
-                print(f'Error for {idx}: {e}')
-                raise e
+        # aggregate results
+        case_weight[idx] = weight
+        case_pred[idx] = case_confidence
+        if len(lesion_results_case):
+            case_target[idx] = np.max([a[0] for a in lesion_results_case])
+        else:
+            case_target[idx] = 0
 
-            # aggregate results
-            idx, weight = future_to_args[future]
-            case_weight[idx] = weight
-            case_pred[idx] = case_confidence
-            if len(lesion_results_case):
-                case_target[idx] = np.max([a[0] for a in lesion_results_case])
-            else:
-                case_target[idx] = 0
-
-            # accumulate outputs
-            lesion_results[idx] = lesion_results_case
-            lesion_weight[idx] = [weight] * len(lesion_results_case)
+        # accumulate outputs
+        lesion_results[idx] = lesion_results_case
+        lesion_weight[idx] = [weight] * len(lesion_results_case)
 
     # collect results in a Metrics object
     metrics = Metrics(
