@@ -276,7 +276,7 @@ def evaluate(
         lesion candidates from a softmax prediction volume.
     - y_true_postprocess_func: function to apply to annotation. Can for example be used to select the lesion
         masks from annotations that also contain other structures (such as organ segmentations).
-    - num_parallel_calls: number of threads to use for evaluation.
+    - num_parallel_calls: number of threads to use for evaluation. Set to 1 to disable parallelization.
     - verbose: (optional) controll amount of printed information.
 
     Returns:
