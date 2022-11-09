@@ -5,12 +5,13 @@ from subprocess import check_call
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.metrics import auc, roc_curve
+
 from picai_eval import evaluate
 from picai_eval.data_utils import load_metrics
 from picai_eval.eval import Metrics, evaluate_folder
 from picai_eval.image_utils import (read_label, read_prediction,
                                     resize_image_with_crop_or_pad)
-from sklearn.metrics import auc, roc_curve
 
 subject_list = [
     f"case-{i}"
@@ -59,7 +60,7 @@ def y_true():
     yield y_true
 
 
-def test_evaluation(y_det, y_true):
+def test_evaluation(y_det, y_true, num_parallel_calls=3):
     """
     Test standard evaluation pipeline
     The 10 crafted cases in subject_list should have:
@@ -71,7 +72,8 @@ def test_evaluation(y_det, y_true):
     metrics = evaluate(
         y_det=y_det,
         y_true=y_true,
-        subject_list=subject_list
+        subject_list=subject_list,
+        num_parallel_calls=num_parallel_calls,
     )
 
     # check metrics
@@ -184,7 +186,7 @@ def test_sample_weights():
 @pytest.mark.xfail
 def test_evaluation_negative_predictions(y_det, y_true):
     """
-    Test if evaluation works properly if (some) confidence scores are negative
+    Test if evaluation works if (some) confidence scores are negative
     """
     # shift confidence scores to include both positive and negative confidences
     shifted_y_det = [y_det - 1.5 for y_det in y_det]
@@ -197,25 +199,31 @@ def test_evaluation_negative_predictions(y_det, y_true):
     evaluate(
         y_det=shifted_y_det,
         y_true=y_true,
-        subject_list=subject_list
+        subject_list=subject_list,
     )
 
 
 @pytest.mark.xfail
-def test_softmax_input(y_det, y_true):
+def test_softmax_input(y_det, y_true, num_parallel_calls=3):
     """
     Test if evaluation throws an error when the input is a softmax volume (instead of detection maps)
     """
     evaluate(
         y_det=[np.random.normal(size=pred.shape) for pred in y_det],
         y_true=y_true,
-        subject_list=subject_list
+        subject_list=subject_list,
+        num_parallel_calls=num_parallel_calls,
     )
 
 
-def test_evaluation_from_dir_with_subject_list():
+def test_evaluation_from_dir_with_subject_list(num_parallel_calls=3):
     detection_map_dir = "tests/test-maps"
-    metrics = evaluate_folder(detection_map_dir, subject_list=subject_list, verbose=1)
+    metrics = evaluate_folder(
+        detection_map_dir,
+        subject_list=subject_list,
+        num_parallel_calls=num_parallel_calls,
+        verbose=1,
+    )
 
     # check metrics
     assert metrics.lesion_TP[-2] == 5
@@ -224,9 +232,9 @@ def test_evaluation_from_dir_with_subject_list():
     assert metrics.AP == (5/9)*(1/2) + 0*(1/2)
 
 
-def test_evaluation_from_dir_without_subject_list():
+def test_evaluation_from_dir_without_subject_list(num_parallel_calls=3):
     detection_map_dir = "tests/test-maps"
-    metrics = evaluate_folder(detection_map_dir, verbose=1)
+    metrics = evaluate_folder(detection_map_dir, num_parallel_calls=num_parallel_calls, verbose=1)
 
     # check metrics
     assert metrics.lesion_TP[-2] == 5
@@ -324,3 +332,10 @@ def test_select_subset_lesion_results():
     lesion_results_subset = metrics.get_lesion_results_flat(subject_list=["2", "3"])
 
     assert lesion_results_subset_expected == lesion_results_subset
+
+
+def test_single_threaded(y_det, y_true):
+    """Test if single threaded evaluation works"""
+    test_evaluation(y_det=y_det, y_true=y_true, num_parallel_calls=1)
+    test_evaluation_from_dir_with_subject_list(num_parallel_calls=1)
+    test_evaluation_from_dir_without_subject_list(num_parallel_calls=1)

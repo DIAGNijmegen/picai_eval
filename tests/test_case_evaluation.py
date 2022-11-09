@@ -2,6 +2,7 @@ import os
 
 import pytest
 from numpy.testing import assert_allclose
+
 from picai_eval.eval import evaluate_case
 
 
@@ -42,7 +43,7 @@ def test_evaluate_case(y_det, y_true, expected_y_list):
     Evaluate predictions and calculate FROC statistics
     """
 
-    y_list, _ = evaluate_case(
+    y_list, *_ = evaluate_case(
         y_det=os.path.join("tests/test-maps", y_det),
         y_true=os.path.join("tests/test-maps", y_true),
     )
