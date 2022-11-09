@@ -216,6 +216,7 @@ def make_evaluation_iterator(
 
             iterator = concurrent.futures.as_completed(futures)
     else:
+        # process the cases sequentially
         def func(y_det_case, y_true_case, weight, idx):
             return evaluate_case(
                 y_det=y_det_case,
