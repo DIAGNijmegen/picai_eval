@@ -200,7 +200,6 @@ def test_evaluation_negative_predictions(y_det, y_true):
         y_det=shifted_y_det,
         y_true=y_true,
         subject_list=subject_list,
-        num_parallel_calls=num_parallel_calls,
     )
 
 

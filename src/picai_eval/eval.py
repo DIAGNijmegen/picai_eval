@@ -226,7 +226,7 @@ def make_evaluation_iterator(
             )
 
         iterator = map(func, y_det, y_true, sample_weight, subject_list)
-    
+
     return iterator
 
 
