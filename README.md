@@ -263,7 +263,7 @@ For the following tests, we assume that each AI algorithm is trained on the same
 
 **Statistical Question**: What is the probability that one AI algorithm outperforms another, while accounting for the performance variance stemming from each AI algorithm’s training method?
 
-**Statistical Test**: Permutation tests (as applied in [Ruamviboonsuk et al., 2022](https://www.thelancet.com/journals/landig/article/PIIS2589-7500(22)00017-6/fulltext), [McKinney et al., 2020](https://www.nature.com/articles/s41586-019-1799-6) and [Bulten et al., 2022](https://www.nature.com/articles/s41591-021-01620-2)). In each replication, performance metrics (ranking score, AP or AUROC) are shuffled across methods (different AI algorithms) and their instances (independently trained samples of each method).
+**Statistical Test**: Permutation test (as applied in [Bosma et al., 2021](https://arxiv.org/pdf/2112.05151.pdf)). In each replication, performance metrics (ranking score, AP or AUROC) are shuffled across methods (different AI algorithms) and their instances (independently trained samples of each method). As such, the performance variance between training runs is accounted for. This is different from the permutation test used in e.g. [Ruamviboonsuk et al., 2022](https://www.thelancet.com/journals/landig/article/PIIS2589-7500(22)00017-6/fulltext), [McKinney et al., 2020](https://www.nature.com/articles/s41586-019-1799-6) and [Bulten et al., 2022](https://www.nature.com/articles/s41591-021-01620-2), where predictions are permuted rather than performance metrics. When permuting predictions, the _trained model instances_ are compared, rather than the _training methods_.
 
 Permutation test can be used as follows:
 ```python
