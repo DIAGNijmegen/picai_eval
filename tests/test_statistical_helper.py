@@ -3,6 +3,7 @@ from typing import List
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+
 from picai_eval.statistical_helper import (calc_sensitivity, calc_specificity,
                                            match_reader, match_then_compare,
                                            multiple_permutation_tests,
@@ -10,6 +11,7 @@ from picai_eval.statistical_helper import (calc_sensitivity, calc_specificity,
 
 
 def sample_predictions(n_pos=300, n_neg=700, kwargs_pos=None, kwargs_neg=None, seed=None):
+    """Generate a set of predictions. With default parameters, these predictions have ~0.9 AUROC."""
     # set default values (which have ~0.9 AUC)
     if kwargs_pos is None:
         kwargs_pos = dict(a=3, b=2)
@@ -29,6 +31,7 @@ def sample_predictions(n_pos=300, n_neg=700, kwargs_pos=None, kwargs_neg=None, s
 
 
 def sample_prediction_set(instances=10, n_pos=300, n_neg=700, kwargs_pos=None, kwargs_neg=None, seed=None):
+    """Generate multiple sets of predictions and a set of labels."""
     # set random seed
     np.random.seed(seed)
     seeds = np.random.randint(int(1e5), size=instances)
