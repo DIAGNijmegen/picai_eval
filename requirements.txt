@@ -1,7 +1,7 @@
 numpy
 tqdm
 SimpleITK
-scipy
+scipy>=1.8
 scikit-learn>=0.20.3
 mlxtend
 report_guided_annotation>=0.2.4
