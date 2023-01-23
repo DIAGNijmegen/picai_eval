@@ -170,7 +170,22 @@ def multiple_permutation_tests(
     return p_values
 
 
-def match_reader(y_true, y_pred_ai, y_pred_reader, sample_weight=None, match='sensitivity'):
+def match_reader(y_true, y_pred_ai, y_pred_reader, sample_weight=None, match='sensitivity', strict=True):
+    """
+    Binarize the AI predictions by choosing a threshold that matches the reader's performance.
+
+    Input:
+    - y_true: ground truth labels
+    - y_pred_ai: AI predictions (array of floating point probabilities between [0, 1])
+    - y_pred_reader: reader predictions (array of binary predictions {0, 1})
+    - sample_weight: sample weights
+    - match: metric to match (available: sensitivity, specificity)
+    - strict: if True, the threshold is chosen such that the reader's performance is exactly matched or exceeded.
+              If False, the threshold is chosen such that the AI performance is closest to the reader performance.
+
+    Returns:
+    - y_pred_ai_binarized: AI predictions binarized by the threshold that matches the reader's performance
+    """
     # input conversion and validation
     y_true = np.array(y_true)
     y_pred_ai = np.array(y_pred_ai)
@@ -191,7 +206,7 @@ def match_reader(y_true, y_pred_ai, y_pred_reader, sample_weight=None, match='se
 
     assert len(y_true) == len(y_pred_ai)
 
-    # calculate metric (sensitivity/specificity/recall/precision) for reader
+    # calculate metric (sensitivity/specificity) for reader
     if match == 'sensitivity':
         performance_reader = calc_sensitivity(y_true=y_true, y_pred=y_pred_reader, sample_weight=sample_weight)
     elif match == 'specificity':
@@ -206,13 +221,18 @@ def match_reader(y_true, y_pred_ai, y_pred_reader, sample_weight=None, match='se
     elif match == 'specificity':
         performance_ai = 1 - fpr
 
-    diff = np.abs(performance_ai - performance_reader)
-
-    # grab index of closest point
-    viable_thresholds = thresholds[diff == np.min(diff)]
-    threshold = np.random.choice(viable_thresholds)
-    # closest_idx = np.argmin(diff)
-    # threshold = thresholds[closest_idx]
+    if strict:
+        # find first threshold that matches or exceeds reader performance
+        diff = performance_ai - performance_reader
+        idx = np.argmax(diff >= 0)
+        if idx == 0:
+            raise ValueError("Error: AI performance is worse than reader performance for all thresholds.")
+        threshold = thresholds[idx]
+    else:
+        # find threshold that is closest to reader performance
+        diff = np.abs(performance_ai - performance_reader)
+        viable_thresholds = thresholds[diff == np.min(diff)]
+        threshold = np.random.choice(viable_thresholds)
 
     return (y_pred_ai >= threshold).astype(int)
 
@@ -303,8 +323,9 @@ def perform_matched_boostrapping(
     flavour: str = "match>sample>compare",
     sample_weight: "Optional[Union[Dict[Hashable, float], Sequence[float], npt.NDArray[np.float_]]]" = None,
     iterations: int = 1_000_000,
+    strict: bool = True,
     seed: Optional[int] = None,
-    verbose: bool = True
+    verbose: bool = True,
 ) -> float:
     """
     Perform bootstrapping to estimate the probability that AI outperforms the reader.
@@ -376,7 +397,8 @@ def perform_matched_boostrapping(
             y_pred_ai=y_pred_ai,
             y_pred_reader=y_pred_reader,
             sample_weight=sample_weight,
-            match=match
+            match=match,
+            strict=strict,
         )
 
         # perform bootstrapping, see https://github.com/mateuszbuda/ml-stat-util
@@ -446,6 +468,7 @@ def perform_matched_permutation_test(
     conjugate_performance_metric: Optional[Union[str, Callable[[Any, Any, Optional[Any]], float]]] = None,
     sample_weight: Optional[FloatDictOrArraylike] = None,
     iterations: int = 1_000_000,
+    strict: bool = True,
     verbose: bool = True
 ) -> float:
     """
@@ -524,7 +547,8 @@ def perform_matched_permutation_test(
                 y_pred_ai=y_pred_ai_instance,
                 y_pred_reader=y_pred_reader,
                 sample_weight=sample_weight,
-                match=match
+                match=match,
+                strict=strict,
             )
 
             score_ai = conjugate_performance_metric(y_true, y_pred_ai_matched)
