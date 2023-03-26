@@ -267,7 +267,7 @@ def evaluate(
 
     with ThreadPoolExecutor(max_workers=num_parallel_calls) as pool:
         if num_parallel_calls >= 2:
-        # process the cases in parallel
+            # process the cases in parallel
             futures = {
                 pool.submit(
                     evaluate_case,
