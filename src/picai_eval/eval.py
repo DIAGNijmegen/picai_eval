@@ -256,7 +256,7 @@ def evaluate(
     lesion_weight: Dict[Hashable, List[float]] = {}
 
     # construct case evaluation kwargs
-    kwargs = dict(
+    evaluate_case_kwargs = dict(
         min_overlap=min_overlap,
         overlap_func=overlap_func,
         case_confidence_func=case_confidence_func,
@@ -275,7 +275,7 @@ def evaluate(
                     y_true=y_true_case,
                     weight=weight,
                     idx=idx,
-                    **kwargs
+                    **evaluate_case_kwargs
                 ): idx
                 for (y_det_case, y_true_case, weight, idx) in zip(y_det, y_true, sample_weight, subject_list)
             }
@@ -289,7 +289,7 @@ def evaluate(
                     y_true=y_true_case,
                     weight=weight,
                     idx=idx,
-                    **kwargs
+                    **evaluate_case_kwargs
                 )
 
             iterator = map(func, y_det, y_true, sample_weight, subject_list)
