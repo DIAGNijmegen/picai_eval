@@ -116,6 +116,13 @@ class Metrics:
         """Calculate the ranking score, as used in the PI-CAI 22 Grand Challenge"""
         return (self.auroc + self.AP) / 2
 
+    def lesion_TPR_at_FPR(self, FPR: float) -> float:
+        """Calculate the lesion-level true positive rate (sensitivity) at a given
+        false positive rate (average number of false positives per examimation)"""
+        if np.max(self.lesion_FPR) < FPR:
+            return 0
+        return self.lesion_TPR[self.lesion_FPR <= FPR][-1]
+
     # lesion-level results
     def get_lesion_results_flat(self, subject_list: Optional[List[str]] = None):
         """Flatten the per-case lesion evaluation results into a single list"""
