@@ -72,7 +72,7 @@ def read_image(path: PathLike):
         # read the nnU-Net format
         data = np.load(path)
         data = data["softmax"] if "softmax" in data else data["probabilities"]
-        return data.astype("float32")[1]    
+        return data.astype("float32")[1]
     else:
         raise ValueError(f"Unexpected file path. Supported file formats: .nii(.gz), .mha, .npy and .npz. Got: {path}.")
 
