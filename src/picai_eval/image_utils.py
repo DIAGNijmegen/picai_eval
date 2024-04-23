@@ -69,7 +69,7 @@ def read_image(path: PathLike):
     elif '.nii' in path or '.mha' in path or 'mhd' in path:
         return sitk.GetArrayFromImage(sitk.ReadImage(path))
     elif '.npz' in path:
-        #read the nnU-Net format
+        # read the nnU-Net format
         data = np.load(path)
         data = data["softmax"] if "softmax" in data else data["probabilities"]
         return data.astype("float32")[1]    
