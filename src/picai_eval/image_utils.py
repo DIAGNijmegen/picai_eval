@@ -64,12 +64,12 @@ def read_image(path: PathLike):
     else:
         assert isinstance(path, str), f"Unexpected path type: {type(path)}. Please provide a Path or str."
 
-    if '.npy' in path:
+    if '.npz' in path:
+        return np.load(path)['probabilities'].astype('float32')[1]  # nnUnet format
+    elif '.npy' in path:
         return np.load(path)
     elif '.nii' in path or '.mha' in path or 'mhd' in path:
         return sitk.GetArrayFromImage(sitk.ReadImage(path))
-    elif '.npz' in path:
-        return np.load(path)['softmax'].astype('float32')[1]  # nnUnet format
     else:
         raise ValueError(f"Unexpected file path. Supported file formats: .nii(.gz), .mha, .npy and .npz. Got: {path}.")
 
@@ -85,4 +85,5 @@ def read_label(path: PathLike) -> "npt.NDArray[np.int32]":
     """Read label, given a filepath"""
     # read label and ensure correct dtype
     lbl: "npt.NDArray[np.int32]" = np.array(read_image(path), dtype=np.int32)
+    lbl[lbl!=1]=0
     return lbl
