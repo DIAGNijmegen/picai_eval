@@ -71,7 +71,7 @@ def read_image(path: PathLike):
     elif '.npz' in path:
         try:
             return np.load(path)['softmax'].astype('float32')[1]  # nnUnet format
-        except:
+        except Exception as e:
             return np.load(path)['probabilities'].astype('float32')[1]  # nnUnet format
     else:
         raise ValueError(f"Unexpected file path. Supported file formats: .nii(.gz), .mha, .npy and .npz. Got: {path}.")
@@ -88,5 +88,5 @@ def read_label(path: PathLike) -> "npt.NDArray[np.int32]":
     """Read label, given a filepath"""
     # read label and ensure correct dtype
     lbl: "npt.NDArray[np.int32]" = np.array(read_image(path), dtype=np.int32)
-    lbl[lbl!=1]=0
+    lbl[lbl != 1] = 0
     return lbl
