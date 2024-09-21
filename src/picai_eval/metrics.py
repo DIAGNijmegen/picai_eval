@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import Any, Dict, Hashable, List, Optional, Tuple, Union
 
 import numpy as np
+import sklearn
+from packaging import version
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 
 try:
@@ -265,11 +267,19 @@ class Metrics:
         y_pred: "npt.NDArray[np.float64]" = np.array([pred for _, pred, *_ in lesion_y_list])
 
         # calculate precision-recall curve
-        precision, recall, thresholds = precision_recall_curve(
-            y_true=y_true,
-            probas_pred=y_pred,
-            sample_weight=self.get_lesion_weight_flat(subject_list=subject_list)
-        )
+        if version.parse(sklearn.__version__) >= version.parse("1.5"):
+            # in the future this if/else block can be removed, then set 1.5 as minimum in requirements.txt
+            precision, recall, thresholds = precision_recall_curve(
+                y_true=y_true,
+                y_score=y_pred,
+                sample_weight=self.get_lesion_weight_flat(subject_list=subject_list)
+            )
+        else:
+            precision, recall, thresholds = precision_recall_curve(
+                y_true=y_true,
+                probas_pred=y_pred,
+                sample_weight=self.get_lesion_weight_flat(subject_list=subject_list)
+            )
 
         # set precision to zero at a threshold of "zero", as those lesion
         # candidates are included just to convey the number of lesions to
