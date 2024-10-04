@@ -121,7 +121,7 @@ class Metrics:
     def lesion_TPR_at_FPR(self, FPR: float) -> float:
         """Calculate the lesion-level true positive rate (sensitivity) at a given
         false positive rate (average number of false positives per examimation)"""
-        if np.max(self.lesion_FPR) < FPR:
+        if np.min(self.lesion_FPR) > FPR:
             return 0
         return self.lesion_TPR[self.lesion_FPR <= FPR][-1]
 
