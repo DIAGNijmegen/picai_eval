@@ -160,7 +160,7 @@ def evaluate_case(
             overlap = overlap_matrix[lesion_id, lesion_candidate_id]
             overlap -= 1  # return overlap to [0, 1]
 
-            assert overlap > min_overlap, "Overlap must be greater than min_overlap!"
+            assert overlap >= min_overlap, "Overlap must be at least `min_overlap`!"
 
             y_list.append((1, lesion_confidence, overlap))
 
