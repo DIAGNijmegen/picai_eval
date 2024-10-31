@@ -247,8 +247,13 @@ class Metrics:
             TP[i] = tp
 
         # extend curve to infinity
-        TP[-1] = TP[-2]
-        FP[-1] = np.inf
+        if len(TP) >= 2:
+            TP[-1] = TP[-2]
+            FP[-1] = np.inf
+        else:
+            # no lesions detected
+            TP = np.array([0, 0])
+            FP = np.array([0, np.inf])
 
         return {
             'TP': TP,
