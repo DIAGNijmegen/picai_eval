@@ -325,16 +325,17 @@ class Metrics:
             'AUROC': auroc,
         }
 
-    def bootstrap_score_ci(self, n_bootstraps: int = 1000) -> Dict[str, float]:
+    def bootstrap_score_ci(self, n_bootstraps: int = 1000, seed: int | None = None) -> Dict[str, float]:
         """
         Calculate confidence intervals for AUROC, AP and ranking score using bootstrapping.
         """
+        rng = np.random.default_rng(seed)
         auroc_scores = []
         ap_scores = []
 
         for _ in range(n_bootstraps):
             # sample with replacement
-            subject_list_sample = np.random.choice(self.subject_list, size=len(self.subject_list), replace=True)
+            subject_list_sample = rng.choice(self.subject_list, size=len(self.subject_list), replace=True)
 
             # calculate AUROC and AP
             auroc_scores.append(self.calc_auroc(subject_list=subject_list_sample))
