@@ -325,7 +325,7 @@ class Metrics:
             'AUROC': auroc,
         }
 
-    def bootstrap_score_ci(self, n_bootstraps: int = 1000, seed: int | None = None) -> Dict[str, float]:
+    def bootstrap_score_ci(self, n_bootstraps: int = 1000, seed: Union[int, None] = None) -> Dict[str, float]:
         """
         Calculate confidence intervals for AUROC, AP and ranking score using bootstrapping.
         """
